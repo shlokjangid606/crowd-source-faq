@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api, { friendlyError } from '../../utils/api';
-import Avatar from './Avatar';
-import Badge from './Badge';
-import Button from './Button';
+import Avatar from '../ui/Avatar';
+import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 import CommentNode from './CommentNode';
+import ThreadActivityTimeline, { type LifecycleStatusHistoryEntry } from './ThreadActivityTimeline';
+import ThreadBookmarkButton from './ThreadBookmarkButton';
+import ThreadShareButton from './ThreadShareButton';
 import type { Post } from '../../types/ui';
 import type { CloudinaryAsset } from '../../hooks/useCloudinaryUpload';
 import { buildTransformedUrl } from '../../hooks/useCloudinaryUpload';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthGate } from '../../context/AuthModalContext';
-import { LIFECYCLE_CONFIG, formatDate, DEPTH_COLORS, DEPTH_BARS } from './threadUtils';
+import { LIFECYCLE_CONFIG, formatDate, DEPTH_COLORS, DEPTH_BARS } from '../ui/threadUtils';
 
 export interface Comment {
   _id: string;
@@ -66,13 +69,7 @@ export interface ThreadPost {
   // Lifecycle pipeline
   lifecycle?: {
     status: string;
-    statusHistory?: Array<{
-      from: string;
-      to: string;
-      changedBy?: { name?: string; _id?: string };
-      changedAt: string;
-      note?: string;
-    }>;
+    statusHistory?: LifecycleStatusHistoryEntry[];
   };
   [key: string]: unknown;
 }
@@ -391,30 +388,21 @@ export default function ThreadDetail({ postId, onClose }: ThreadDetailProps) {
               </span>
 
               {/* Bookmark */}
-              <button
-                onClick={handleBookmark}
-                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+              <ThreadBookmarkButton
+                isBookmarked={Boolean(
                   post.bookmarks?.some(b => (typeof b === 'object' ? (b as { _id?: string })._id : b)?.toString() === currentUserId)
-                    ? 'bg-accent/10 text-accent'
-                    : 'bg-mist text-ink-soft hover:bg-border hover:text-ink'
-                }`}
-                title="Bookmark"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill={post.bookmarks?.some(b => (typeof b === 'object' ? (b as { _id?: string })._id : b)?.toString() === currentUserId) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.4">
-                  <path d="M3.5 2h7v10l-3.5-2.5-3.5 2.5V2z"/>
-                </svg>
-              </button>
+                )}
+                onToggle={handleBookmark}
+              />
 
               {/* Share */}
-              <button
-                onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/community?post=${post._id}`); setActionError('Post link copied to clipboard'); setTimeout(() => setActionError(null), 2000); }}
-                className="w-8 h-8 rounded-xl bg-mist text-ink-soft hover:bg-border hover:text-ink flex items-center justify-center transition-all"
-                title="Copy link"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4">
-                  <path d="M5.5 3.5H3.5a1 1 0 00-1 1v6a1 1 0 001 1h6a1 1 0 001-1v-2M8.5 1.5h4v4M6 8l4.5-4.5"/>
-                </svg>
-              </button>
+              <ThreadShareButton
+                postId={post._id}
+                onCopied={(message) => {
+                  setActionError(message);
+                  setTimeout(() => setActionError(null), 2000);
+                }}
+              />
 
               {/* Author / privileged actions */}
               {(currentUserId === post.author?._id || isPrivileged) && (
@@ -626,49 +614,7 @@ export default function ThreadDetail({ postId, onClose }: ThreadDetailProps) {
 
           {/* Lifecycle Activity Timeline */}
           {post.lifecycle?.statusHistory && post.lifecycle.statusHistory.length > 0 && (
-            <div className="px-6 sm:px-8 py-5 border-t border-border/30">
-              <h3 className="text-xs font-semibold text-ink-soft uppercase tracking-wider mb-3 flex items-center gap-2">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
-                  <circle cx="6" cy="6" r="5"/>
-                  <path d="M6 3V6.5L8 8" strokeLinecap="round"/>
-                </svg>
-                Lifecycle History
-              </h3>
-              <div className="relative pl-4">
-                {/* Vertical timeline line */}
-                <div className="absolute left-[7px] top-1 bottom-1 w-px bg-border" />
-                <div className="space-y-3">
-                  {post.lifecycle.statusHistory.map((entry, i) => {
-                    const lcTo = LIFECYCLE_CONFIG[entry.to];
-                    return (
-                      <div key={i} className="relative flex items-start gap-3">
-                        {/* Dot */}
-                        <div className="relative z-10 w-3 h-3 rounded-full border-2 border-border bg-card flex-shrink-0 mt-1" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {LIFECYCLE_CONFIG[entry.from] && (
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${LIFECYCLE_CONFIG[entry.from].cls}`}>
-                                {LIFECYCLE_CONFIG[entry.from].label}
-                              </span>
-                            )}
-                            <span className="text-xs text-ink-faint">→</span>
-                            {lcTo && (
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${lcTo.cls}`}>
-                                {lcTo.label}
-                              </span>
-                            )}
-                          </div>
-                          {entry.note && <p className="text-xs text-ink-soft mt-0.5">{entry.note}</p>}
-                          <p className="text-[10px] text-ink-faint mt-0.5">
-                            by {entry.changedBy?.name || 'System'} · {formatDate(entry.changedAt)}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            <ThreadActivityTimeline statusHistory={post.lifecycle.statusHistory} />
           )}
 
           {/* Related Questions + Similar FAQs (per spec) */}
