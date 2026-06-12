@@ -326,8 +326,15 @@ function validateEnv(): void {
 
 // 8. Server Initialization
 // Prevents direct listening in production if deployed as a serverless function (e.g., Vercel)
+//
+// C3 fix (v1.68): env validation is ALWAYS run, not just in
+// non-production. Previously `if (NODE_ENV !== 'production')`
+// gated the entire listen block (including validateEnv), so a
+// misconfigured prod deploy with weak/missing JWT_SECRET or
+// MONGODB_URI would boot silently. Now validation fails-fast
+// in every environment, and only the app.listen() is gated.
+validateEnv();
 if (process.env.NODE_ENV !== 'production') {
-  validateEnv();
   app.listen(PORT, async () => {
     // v1.67 — fire ALERT on startup (Discord ping). This is the
     // "server is alive" signal so you know restarts happened.
