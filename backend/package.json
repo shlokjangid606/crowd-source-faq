@@ -24,6 +24,7 @@
     "cleanup:orphan-notifications": "tsx scripts/cleanupOrphanNotifications.ts",
     "seed:live": "tsx scripts/seedLiveData.ts",
     "fetch:faqs": "tsx scripts/fetchFaqsFromSite.ts",
+    "dedupe:faqs": "tsx scripts/dedupeFaqs.ts",
     "cleanup:seed": "tsx scripts/cleanupSeedData.ts",
     "setup:new-cluster": "tsx scripts/setupNewCluster.ts",
     "test:hf-key": "tsx scripts/testHuggingFaceKey.ts",
