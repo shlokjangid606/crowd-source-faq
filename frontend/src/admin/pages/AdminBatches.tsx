@@ -14,6 +14,8 @@ interface AdminBatch {
   startDate: string;
   endDate: string;
   isActive: boolean;
+  /** v1.69 — true for the single program non-admins see on `/`. */
+  isDefault?: boolean;
   faqCount: number;
   approvedCount?: number;
   createdAt: string;
@@ -182,6 +184,16 @@ export default function AdminBatches(): JSX.Element {
       await load();
       void refreshContext();
     } catch (err) { showToast(friendly(err, 'Delete failed.'), 'error'); }
+  };
+  // v1.69 — promote this batch to the one shown on `/` for non-admins.
+  // Backend clears the flag on every other batch atomically.
+  const setAsDefault = async (b: AdminBatch): Promise<void> => {
+    try {
+      await adminApi.post(`/batches/${b._id}/default`);
+      showToast(`"${b.name}" is now the featured program.`);
+      await load();
+      void refreshContext();
+    } catch (err) { showToast(friendly(err, 'Failed to set as default.'), 'error'); }
   };
 
   // ── Sorted view: active first, then by start date desc ────────────────
@@ -365,6 +377,17 @@ export default function AdminBatches(): JSX.Element {
                         Edit
                       </button>
                       {b.isActive ? (
+                        <>
+                          {!b.isDefault && (
+                            <button
+                              type="button"
+                              onClick={() => setAsDefault(b)}
+                              className="px-2.5 py-1 rounded-md text-[11px] text-accent hover:bg-accent/10 transition-colors"
+                              title="Make this the program shown to non-admin visitors"
+                            >
+                              Set featured
+                            </button>
+                          )}
                         <button
                           type="button"
                           onClick={() => archive(b)}
@@ -373,6 +396,7 @@ export default function AdminBatches(): JSX.Element {
                         >
                           Archive
                         </button>
+                        </>
                       ) : (
                         <button
                           type="button"
