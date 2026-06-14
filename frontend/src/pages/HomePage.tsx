@@ -7,11 +7,13 @@
 // batch is selected yet, the user is bounced to /explore/select.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import Footer from '../components/layout/Footer';
 import { BatchSwitcher } from '../components/layout/BatchSwitcher';
 import { useBatch } from '../context/BatchContext';
 import { useCategories, usePopularFaqs, useRecentFaqs } from '../components/explore/usePublicFaqApi';
+import { useCourses } from '../components/explore/useCourses';
+import type { Course } from '../types/course';
 import InteractiveSearchOverlay from '../components/search/InteractiveSearchOverlay';
 import { ExploreHero } from '../components/explore/ExploreHero';
 import { ExploreSearchResults } from '../components/explore/ExploreSearchResults';
@@ -32,10 +34,32 @@ export default function ExplorePage(): React.ReactElement {
   const { currentBatch, loading: batchLoading } = useBatch();
   const batchId = currentBatch?._id ?? null;
 
-  // ── Data: only what we need for the chrome ─────────────────────────────
-  const { data: popularData, loading: popularLoading } = usePopularFaqs(batchId, 5);
-  const { data: recentData, loading: recentLoading } = useRecentFaqs(batchId, 5);
-  const { data: categoriesData, loading: categoriesLoading } = useCategories(batchId, false);
+  // ── Course picker (v1.69) ────────────────────────────────────────────────
+  // The selected course id lives in the URL as ?course=<id> so deep
+  // links are shareable. Reading from the search param on mount +
+  // writing back on click keeps the picker URL-driven.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedCourseId = searchParams.get('course');
+  const setSelectedCourseId = useCallback((id: string | null): void => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (id) next.set('course', id);
+      else next.delete('course');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // ── Data: courses for the current batch, plus the chrome data ───────
+  const { data: coursesData, loading: coursesLoading } = useCourses(batchId);
+  const courses = coursesData?.courses ?? [];
+  const selectedCourse: Course | null = useMemo(
+    () => courses.find((c) => c._id === selectedCourseId) ?? null,
+    [courses, selectedCourseId]
+  );
+
+  const { data: popularData, loading: popularLoading } = usePopularFaqs(batchId, selectedCourseId, 5);
+  const { data: recentData, loading: recentLoading } = useRecentFaqs(batchId, selectedCourseId, 5);
+  const { data: categoriesData, loading: categoriesLoading } = useCategories(batchId, selectedCourseId, false);
 
   const categories = categoriesData?.categories ?? [];
   const totalFaqs = useMemo(
@@ -104,16 +128,31 @@ export default function ExplorePage(): React.ReactElement {
 
   const showingSearch = query.length >= 2;
 
-  // ── Guard: no batch picked yet → portal ───────────────────────────────
+  // ── Guard: no batch picked yet → friendly empty state ──────────────
+  // The BatchContext auto-picks a default batch on cold start if one
+  // exists. If no batches exist at all (seed never ran) we render
+  // an empty state with a hint, instead of bouncing to a picker
+  // page that no longer exists at `/explore/select`.
   if (batchLoading && !currentBatch) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
-        <p className="text-sm text-ink-soft">Loading program…</p>
+        <p className="text-sm text-ink-soft">Loading…</p>
       </div>
     );
   }
   if (!currentBatch) {
-    return <Navigate to="/explore/select" replace />;
+    return (
+      <div className="min-h-screen bg-bg text-ink flex flex-col">
+        <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 pt-32 pb-16 text-center">
+          <h1 className="font-serif text-3xl text-ink mb-3">No programs yet</h1>
+          <p className="text-sm text-ink-soft">
+            Programs are managed from{' '}
+            <a href="/admin/batches" className="text-accent hover:underline font-medium">/admin/batches</a>.
+            Once an admin creates a program, its FAQs will appear here.
+          </p>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -171,17 +210,78 @@ export default function ExplorePage(): React.ReactElement {
               query={query}
               category={activeCategory}
               batchId={batchId}
+              courseId={selectedCourseId}
               onSelectFaq={setOpenFaq}
               onClear={() => setQuery('')}
             />
           )}
 
+          {/* ─── Course picker (v1.69) ─────────────────────────────────── */}
+          {/* A horizontal pill bar above the cards. "All courses" is the
+              default (no ?course= param). Clicking a course scopes the
+              Popular / Recent / Categories cards and the accordion
+              to that course's FAQs. */}
+          {!showingSearch && courses.length > 0 && (
+            <div className="mt-8" data-testid="course-picker">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+                  Courses
+                </p>
+                {selectedCourse && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCourseId(null)}
+                    className="text-[11px] font-medium text-accent hover:underline"
+                  >
+                    Clear course filter
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCourseId(null)}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+                    !selectedCourseId
+                      ? 'bg-accent text-accent-text border border-accent/50 shadow-[0_10px_26px_rgba(90,122,90,0.25)]'
+                      : 'bg-card/80 text-ink border border-border/60 hover:bg-cream hover:-translate-y-0.5 hover:shadow-subtle'
+                  }`}
+                >
+                  All courses
+                </button>
+                {courses.map((c) => {
+                  const isActive = selectedCourseId === c._id;
+                  return (
+                    <button
+                      key={c._id}
+                      type="button"
+                      onClick={() => setSelectedCourseId(c._id)}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+                        isActive
+                          ? 'bg-accent text-accent-text border border-accent/50 shadow-[0_10px_26px_rgba(90,122,90,0.25)]'
+                          : 'bg-card/80 text-ink border border-border/60 hover:bg-cream hover:-translate-y-0.5 hover:shadow-subtle'
+                      }`}
+                      title={c.description || c.name}
+                    >
+                      {c.name}
+                      {c.faqCount > 0 && (
+                        <span className="text-[10px] text-ink-faint font-normal">
+                          ({c.faqCount})
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ─── Top three cards: Popular / Recent / Categories ────── */}
           {!showingSearch && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
-              <PopularFaqsCard batchId={batchId} onSelectFaq={setOpenFaq} />
-              <RecentFaqsCard batchId={batchId} onSelectFaq={setOpenFaq} />
-              <CategoriesCard batchId={batchId} onSelectCategory={handleSelectCategory} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+              <PopularFaqsCard batchId={batchId} courseId={selectedCourseId} onSelectFaq={setOpenFaq} />
+              <RecentFaqsCard batchId={batchId} courseId={selectedCourseId} onSelectFaq={setOpenFaq} />
+              <CategoriesCard batchId={batchId} courseId={selectedCourseId} onSelectCategory={handleSelectCategory} />
             </div>
           )}
 
@@ -213,6 +313,7 @@ export default function ExplorePage(): React.ReactElement {
                       key={cat.name}
                       category={cat}
                       batchId={batchId}
+                      courseId={selectedCourseId}
                       scrollAnchorRef={getSectionRef(cat.name)}
                       openOnMount={isCategoryOpen(cat.name)}
                       onSelectFaq={setOpenFaq}
