@@ -283,6 +283,16 @@ cloudinary:
     - pdf
   maxFileSizeMb: 10
 
+# ── Google Cloud Storage (GCS) ────────────────────────────────────
+gcs:
+  bucket: ""
+  publicHost: "media.mydomain.com"
+  allowedSubfolders:
+    - avatar
+    - posts
+  maxFileSizeMb: 8
+  signedUrlTtlSeconds: 900
+
 # ── Program Management ───────────────────────────────────────────
 programs:
   maxBatchesPerProgram: 50
