@@ -3,6 +3,11 @@ name: Deploy CSFAQ to Production
 on:
   workflow_dispatch:
 
+env:
+  INFISICAL_ENVIRONMENT: prod
+  INFISICAL_SECRET_PATH: csfaq/
+  INFISICAL_API_URL: https://app.infisical.com
+
 jobs:
   deploy:
     name: SSH Deploy
@@ -25,6 +30,17 @@ jobs:
 
             echo "==> Pulling latest code..."
             git pull origin main
+
+            echo "==> Writing backend .env from Infisical..."
+            export INFISICAL_API_URL="${{ env.INFISICAL_API_URL }}"
+            export INFISICAL_TOKEN="${{ secrets.INFISICAL_TOKEN }}"
+            npx @infisical/cli@0.43.40 export \
+              --env="${{ env.INFISICAL_ENVIRONMENT }}" \
+              --path="${{ env.INFISICAL_SECRET_PATH }}" \
+              --format=dotenv > apps/backend/.env
+
+            echo "==> Cleaning quotes from env file..."
+            sed -i "s/='\(.*\)'/=\1/; s/=\"\(.*\)\"/=\1/" apps/backend/.env
 
             echo "==> Installing root dependencies (tsx + shared packages)..."
             npm install --prefer-offline
