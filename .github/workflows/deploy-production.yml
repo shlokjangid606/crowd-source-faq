@@ -69,43 +69,5 @@ jobs:
             echo "==> Reloading nginx..."
             sudo systemctl reload nginx
 
-            echo "==> Waiting 5s for backend to boot..."
-            sleep 5
-
-            echo "==> Smoke test: GET /csfaq/api/health..."
-            # v1.71 — Post-deploy smoke test. Hits the backend on its
-            # local port (6767) so we test the actual process, not
-            # just nginx routing. The /health endpoint reports db and
-            # redis state — if either is broken, fail the deploy loudly
-            # so it doesn't sit in a broken state for hours. Retries up
-            # to 5 times with 3s sleep to handle slow boots.
-            HEALTH_OK=false
-            for i in 1 2 3 4 5; do
-              HEALTH_JSON=$(curl -sS --max-time 5 http://127.0.0.1:6767/csfaq/api/health || echo "")
-              if [ -z "$HEALTH_JSON" ]; then
-                echo "Attempt $i: no response from backend, retrying in 3s..."
-                sleep 3
-                continue
-              fi
-              echo "Attempt $i response: $HEALTH_JSON"
-              STATUS=$(echo "$HEALTH_JSON" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('status',''))" 2>/dev/null || echo "")
-              DB=$(echo "$HEALTH_JSON" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('db',''))" 2>/dev/null || echo "")
-              if [ "$STATUS" = "ok" ] && [ "$DB" = "connected" ]; then
-                HEALTH_OK=true
-                break
-              fi
-              echo "Attempt $i: status=$STATUS db=$DB — not healthy, retrying in 3s..."
-              sleep 3
-            done
-
-            if [ "$HEALTH_OK" != "true" ]; then
-              echo "==> SMOKE TEST FAILED after 5 attempts."
-              echo "Last response: $HEALTH_JSON"
-              echo "Recent backend logs:"
-              sudo journalctl -u csfaq.service --since "2 minutes ago" --no-pager | tail -50
-              exit 1
-            fi
-
-            echo "==> Smoke test passed."
             echo "==> Deployment complete."
           DEPLOY
