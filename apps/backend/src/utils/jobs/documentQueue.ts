@@ -140,6 +140,9 @@ function buildConnectionOptions(): ConnectionOptions | null {
       const u = new URL(url);
       return u.username || undefined;
     })(),
+    // Force IPv4. Many Ubuntu VPS providers (DigitalOcean, AWS, Hetzner) have broken IPv6 routing
+    // which causes instant ECONNREFUSED/ENETUNREACH when Node tries to connect to Upstash over IPv6.
+    family: 4,
     // Required by BullMQ for blocking commands
     maxRetriesPerRequest: null as unknown as number,
     // Upstash requires TLS on the TCP endpoint
