@@ -626,7 +626,7 @@ export default function PostDetailDialog({ post: initialPost, onClose, currentUs
   };
 
   const handleShare = () => {
-    const url = `${window.location.origin}/community?post=${post._id}`;
+    const url = `${window.location.origin}/csfaq/community?post=${post._id}`;
     if (navigator.share) {
       navigator.share({ title: post.title, url });
     } else {
