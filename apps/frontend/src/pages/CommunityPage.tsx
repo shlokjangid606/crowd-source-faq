@@ -222,7 +222,7 @@ export default function CommunityPage() {
   };
 
   const handleShareCommunity = async () => {
-    const url = window.location.origin + '/community';
+    const url = window.location.origin + '/csfaq/community';
     try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
     setToast('Community link copied');
     setTimeout(() => setToast(''), 2500);

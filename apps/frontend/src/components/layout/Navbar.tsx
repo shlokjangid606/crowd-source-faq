@@ -124,7 +124,7 @@ export default function Navbar({ showProgramSwitcher: _showProgramSwitcher = fal
 
   return (
     <header className={`fixed top-2 sm:top-4 left-0 right-0 z-50 px-4 transition-all duration-[400ms] ease-smooth flex flex-col items-center ${isAdminView ? 'top-20 sm:top-24' : ''}`}>
-      <div className={`w-full max-w-[1200px] px-4 sm:px-6 h-14 sm:h-16 grid grid-cols-[1fr_auto_1fr] items-center relative rounded-full transition-all duration-[400ms]
+      <div className={`w-full max-w-[1200px] px-4 sm:px-6 h-14 sm:h-16 grid grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 items-center relative rounded-full transition-all duration-[400ms]
         ${scrolled
           ? 'bg-[rgb(var(--bg-card-rgb)_/_0.75)] backdrop-blur-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-[rgb(var(--border-rgb)_/_0.5)] saturate-[1.5]'
           : 'bg-[rgb(var(--bg-card-rgb)_/_0.4)] backdrop-blur-[12px] border border-[rgb(var(--border-rgb)_/_0.2)] shadow-[0_4px_20px_rgba(0,0,0,0.03)]'
@@ -179,36 +179,18 @@ export default function Navbar({ showProgramSwitcher: _showProgramSwitcher = fal
 
               {/* Authenticated Utility Group */}
               {isAuthenticated && (
-                <div className="flex items-center gap-3 lg:gap-4">
-                  {/* Ask Question button — hidden until 2xl (1536px) so
-                      it stops fighting the center pill for space on
-                      narrower desktop screens. Users can still ask
-                      from /community. */}
-                  <button
-                    onClick={() => navigate('/community?ask=true')}
-                    className="hidden 2xl:inline-flex btn-base btn-primary text-xs"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                    Ask Question
-                  </button>
+                <div className="flex items-center gap-2 sm:gap-3 ml-3 sm:ml-5">
+                  <ZoomBubble />
+                  {/* Spurti Points chip */}
+                  <SpurtiChip />
+                  {user?.role === 'admin' && (
+                    <BatchSwitcher showCreateLink={true} className="hidden md:inline-flex" />
+                  )}
 
-                  <div className="hidden lg:block w-px h-6 bg-border ml-3 lg:ml-4 2xl:ml-0" />
+                  <NotificationBell />
 
-                  <div className="flex items-center gap-2">
-                    <ZoomBubble />
-                    {/* Spurti Points chip */}
-                    <SpurtiChip />
-                    {user?.role === 'admin' && (
-                      <BatchSwitcher showCreateLink={true} className="hidden md:inline-flex" />
-                    )}
-
-                    <NotificationBell />
-
-                    {/* User Avatar + Dropdown */}
-                    <div className="relative" ref={profileRef}>
+                  {/* User Avatar + Dropdown */}
+                  <div className="relative" ref={profileRef}>
                       <button
                         onClick={(e) => { e.stopPropagation(); setProfileOpen(!profileOpen); }}
                         className="flex items-center gap-1.5 cursor-pointer group"
@@ -310,7 +292,6 @@ export default function Navbar({ showProgramSwitcher: _showProgramSwitcher = fal
                       )}
                     </div>
                   </div>
-                </div>
               )}
             </>
           )}

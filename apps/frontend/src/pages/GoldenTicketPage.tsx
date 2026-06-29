@@ -97,12 +97,12 @@ function AnimatedNumber({ value }: { value: string }) {
 }
 
 export default function GoldenTicketPage(): React.ReactElement {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const q = searchParams.get('q');
-  const isAuthed = Boolean(user?._id);
+  const isAuthed = isAuthenticated;
 
   const [status, setStatus] = useState<SpurtiStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
