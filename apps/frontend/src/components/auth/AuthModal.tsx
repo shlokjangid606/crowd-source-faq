@@ -219,8 +219,12 @@ export default function AuthModal() {
       submittedRef.current = false;
       return;
     }
-    if (registerForm.password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (
+      registerForm.password.length < 8 ||
+      !/[A-Za-z]/.test(registerForm.password) ||
+      !/[0-9]/.test(registerForm.password)
+    ) {
+      setError('Password must be at least 8 characters and include a letter and a number.');
       submittedRef.current = false;
       return;
     }
