@@ -14,7 +14,7 @@ import { dispatchNotification } from '../../utils/http/notificationDispatcher.js
 import { communityLog } from '../../utils/http/logger.js';
 import { assertCanCreateContent } from '../../utils/banUtils.js';
 // v1.69 — Phase 3e: program-scope guard for all comment writes.
-import { assertSameProgram } from '../../utils/db/scopedQuery.js';
+import { assertSameProgram, withProgramScope } from '../../utils/db/scopedQuery.js';
 
 // Extend Express Request to include user (same pattern as auth middleware)
 declare global {
@@ -33,10 +33,14 @@ export const getAnswersList = async (req: Request, res: Response): Promise<void>
     const skip = (page - 1) * limit;
 
     const filter = { status: 'answered' };
+    const selectedBatchId = req.query.batchId === 'all'
+      ? null
+      : (req.query.batchId as string | undefined || req.programContext?.batchId?.toString());
+    const scoped = withProgramScope(filter, selectedBatchId);
 
-    const total = await CommunityPost.countDocuments(filter);
+    const total = await CommunityPost.countDocuments(scoped);
 
-    const posts = await CommunityPost.find(filter)
+    const posts = await CommunityPost.find(scoped)
       .select('-embedding')
       .populate('author', 'name')
       .sort({ updatedAt: -1 })
@@ -101,7 +105,11 @@ export const addComment = async (req: Request, res: Response): Promise<void> => 
     }
 
     // Build comment object with parentId and depth for replies
-    const commentObj: Record<string, unknown> = { author: req.user!._id, body: sanitizeHtml(body.trim()) };
+    const commentObj: Record<string, unknown> = {
+      author: req.user!._id,
+      body: sanitizeHtml(body.trim()),
+      batchId: post.batchId,
+    };
     if (resolvedParent) {
       commentObj.parentId = new Types.ObjectId(parentId);
       commentObj.depth = resolvedParent.depth + 1;
@@ -152,6 +160,7 @@ export const addComment = async (req: Request, res: Response): Promise<void> => 
             title: '🏅 First Responder!',
             message: `You were the first to answer "${post.title}" during the Time-Trial challenge!`,
             link: `/community?post=${post._id}`,
+            batchId: post.batchId ?? null,
           })
         ).catch((err) => {
           communityLog.warn(`[comment] Failed to send First Responder notification to ${req.user!._id}: ${(err as Error).message}`);
@@ -166,6 +175,7 @@ export const addComment = async (req: Request, res: Response): Promise<void> => 
           await winner.save();
           await ReputationLog.create({
             userId: winner._id,
+            batchId: post.batchId ?? null,
             delta: 20,
             reason: `First Responder on post "${post.title.slice(0, 40)}"`,
             action: 'answer_accepted',
@@ -185,6 +195,7 @@ export const addComment = async (req: Request, res: Response): Promise<void> => 
           title: 'New comment on your post',
           message: `${req.user!.name} commented on "${post.title}": "${body.trim().slice(0, 80)}${body.trim().length > 80 ? '…' : ''}"`,
           link: `/community?post=${post._id}`,
+          batchId: post.batchId ?? null,
         })
       ).catch((err) => {
         communityLog.warn(`[comment] Failed to notify post author ${post.author}: ${(err as Error).message}`);
@@ -213,6 +224,7 @@ export const addComment = async (req: Request, res: Response): Promise<void> => 
           title: 'Someone replied to your comment',
           message: `${req.user!.name} replied: "${body.trim().slice(0, 80)}${body.trim().length > 80 ? '…' : ''}"`,
           link: `/community?post=${post._id}`,
+          batchId: post.batchId ?? null,
         })
       ).catch((err) => {
         communityLog.warn(`[comment] Failed to notify parent comment author ${resolvedParent.author}: ${(err as Error).message}`);

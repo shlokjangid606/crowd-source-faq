@@ -33,6 +33,9 @@ importers:
       mongodb-memory-server:
         specifier: ^9.2.0
         version: 9.5.0
+      mongoose:
+        specifier: ^8.0.3
+        version: 8.24.0(socks@2.8.9)
       prettier:
         specifier: ^3.2.5
         version: 3.8.4

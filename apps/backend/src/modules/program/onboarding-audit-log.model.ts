@@ -2,6 +2,7 @@ import mongoose, { Document, Schema as MongooseSchema } from 'mongoose';
 
 export interface IOnboardingAuditLog extends Document {
   changedBy: mongoose.Types.ObjectId;
+  batchId?: mongoose.Types.ObjectId | null;
   entityType: 'timeline_step' | 'project' | 'mentor' | 'orientation' | 'checklist' | 'resource';
   entityId: mongoose.Types.ObjectId;
   action: 'create' | 'update' | 'delete' | 'reorder' | 'archive' | 'activate';
@@ -13,6 +14,7 @@ export interface IOnboardingAuditLog extends Document {
 const onboardingAuditLogSchema = new MongooseSchema<IOnboardingAuditLog>(
   {
     changedBy: { type: MongooseSchema.Types.ObjectId, ref: 'User', required: true },
+    batchId: { type: MongooseSchema.Types.ObjectId, ref: 'Batch', default: null, index: true },
     entityType: {
       type: String,
       enum: ['timeline_step', 'project', 'mentor', 'orientation', 'checklist', 'resource'],

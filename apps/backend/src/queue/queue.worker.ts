@@ -29,6 +29,7 @@ import {
   recoverStaleLeases,
 } from './queue.service.js';
 import type { JobType } from './job.model.js';
+import { runWithContext } from '../utils/http/requestContext.js';
 
 // ─── Processor registry ─────────────────────────────────────────────────────
 
@@ -156,10 +157,18 @@ async function runLoop(loopId: string, types: JobType[]): Promise<void> {
     }, HEARTBEAT_MS);
 
     try {
-      await processor(claimedJob.payload, {
-        jobId,
-        updateProgress: (pct: number) => updateProgressSafe(jobId, pct),
-      });
+      const payloadBatchId = (claimedJob.payload as { batchId?: string })?.batchId;
+      const executeProcessor = async () => {
+        await processor(claimedJob.payload, {
+          jobId,
+          updateProgress: (pct: number) => updateProgressSafe(jobId, pct),
+        });
+      };
+      if (payloadBatchId) {
+        await runWithContext({ requestId: `job-${jobId}`, batchId: payloadBatchId }, executeProcessor);
+      } else {
+        await executeProcessor();
+      }
       await complete(jobId);
       logger.info(`[queueWorker] ${loopId} completed job ${jobId}`);
     } catch (err) {

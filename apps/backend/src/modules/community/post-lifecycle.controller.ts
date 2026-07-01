@@ -17,6 +17,7 @@ import FAQ from '../faq/faq.model.js';
 import User from '../auth/user.model.js';
 import { generateEmbedding } from '../../utils/ai/embeddings.js';
 import { invalidateCache } from '../../utils/http/cache.js';
+import { invalidatePublicCaches } from '../faq/public-faq.controller.js';
 import { dispatchNotification } from '../../utils/http/notificationDispatcher.js';
 import { createTeaDrop } from '../notification/tea-notification.controller.js';
 import { sanitizeHtml } from '../../utils/http/sanitize.js';
@@ -196,6 +197,7 @@ export const convertCommunityPostToFAQ = async (req: Request, res: Response): Pr
     const faq = await FAQ.create({
       question: post.title,
       answer: post.answer,
+      batchId: post.batchId,
       category: 'Community',
       status: 'approved',
       embedding,
@@ -221,6 +223,7 @@ export const convertCommunityPostToFAQ = async (req: Request, res: Response): Pr
     await invalidateCache().catch((err) => {
       communityLog.warn(`[post] Failed to invalidate cache on FAQ conversion: ${(err as Error).message}`);
     });
+    invalidatePublicCaches();
 
     res.status(201).json({ message: 'FAQ created from community post.', faq });
   } catch (error) {

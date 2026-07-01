@@ -355,6 +355,7 @@ async function processPost(post: InstanceType<typeof CommunityPost>): Promise<vo
       pipeline:    'auto_answer',
       targetModel: 'CommunityPost',
       targetId:    post._id as Types.ObjectId,
+      batchId:     post.batchId,
       targetTitle: post.title,
       score:       result.confidence,
       verdict:     result.verdict,

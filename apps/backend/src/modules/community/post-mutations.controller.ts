@@ -164,6 +164,11 @@ export const createPost = async (req: Request, res: Response): Promise<void> => 
           ? new Types.ObjectId(batchIdFromBody)
           : null;
 
+    if (!resolvedBatchId) {
+      res.status(400).json({ message: 'A valid program context (batchId) is required.' });
+      return;
+    }
+
     // Create post linked to the authenticated user with a default 'unanswered' status
     const post = await CommunityPost.create({
       title: sanitizeHtml(title),
@@ -301,6 +306,7 @@ export const toggleUpvote = async (req: Request, res: Response): Promise<void> =
       }
       await ReputationLog.create({
         userId: post.author,
+        batchId: post.batchId ?? null,
         delta: 2,
         reason: `Question upvote received: "${post.title.slice(0, 40)}"`,
         action: 'upvote_received',

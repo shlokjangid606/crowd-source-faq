@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import Project from './project.model.js';
 import Orientation from '../program/orientation.model.js';
 import AiQuestion from '../ai/ai-question.model.js';
@@ -14,11 +15,34 @@ import { MarkItDown } from 'markitdown-ts';
 import path from 'path';
 import os from 'os';
 
+/**
+ * batchIdFromQuery — extract a valid program ObjectId from the request
+ * query string. Mirrors the same helper in faq.controller.ts so every
+ * admin route that touches program-scoped data uses one consistent
+ * resolver. Returns null when the param is missing or malformed;
+ * callers decide whether to 400 or fall back to a default scope.
+ */
+function batchIdFromQuery(req: { query: any }): string | null {
+  const raw = req.query?.batchId;
+  if (typeof raw !== 'string') return null;
+  return Types.ObjectId.isValid(raw) ? raw : null;
+}
+
 // --- Projects Management ---
 
 export const getProjects = async (req: Request, res: Response): Promise<void> => {
   try {
-    const projects = await Project.find().populate('mentor').sort({ createdAt: -1 });
+    // v1.69 — multi-program scoping: every list endpoint reads
+    // `?batchId=...` from the query and applies it to the model
+    // query. Without this, the endpoint returns projects across
+    // every program — a cross-tenant data leak.
+    const batchId = batchIdFromQuery(req) || req.programContext?.batchId;
+    if (!batchId) {
+      res.status(200).json([]);
+      return;
+    }
+    const filter = { batchId: new Types.ObjectId(batchId) };
+    const projects = await Project.find(filter).populate('mentor').sort({ createdAt: -1 });
     res.status(200).json(projects);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching projects', error });
@@ -30,7 +54,18 @@ import OnboardingAuditLog from '../program/onboarding-audit-log.model.js';
 
 export const createProject = async (req: Request, res: Response): Promise<void> => {
   try {
-    const payload = { ...req.body };
+    // v1.69 — multi-program scoping: every write requires a valid
+    // batchId so we never write a row without a program owner. The
+    // body can include `batchId` directly, or it can come from
+    // `req.query.batchId` (admin UI uses query string when uploading
+    // alongside the form). We reject without a valid id.
+    const rawBatchId = (req.body?.batchId as string | undefined)
+      ?? batchIdFromQuery(req);
+    if (!rawBatchId || !Types.ObjectId.isValid(rawBatchId)) {
+      res.status(400).json({ message: 'A valid batchId is required to create a project.' });
+      return;
+    }
+    const payload = { ...req.body, batchId: new Types.ObjectId(rawBatchId) };
     const project = new Project(payload);
     await project.save();
 
@@ -41,7 +76,7 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
         entityType: 'project',
         entityId: project._id,
         action: 'create',
-        newValue: { projectName: project.projectName },
+        newValue: { projectName: project.projectName, batchId: project.batchId },
       });
     }
 
@@ -62,8 +97,17 @@ export const updateProject = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    // v1.69 — guard against cross-program moves: the project's
+    // batchId is immutable after creation. If the request body
+    // includes a different batchId, reject the update.
+    if (payload.batchId && String(payload.batchId) !== String(project.batchId)) {
+      res.status(400).json({ message: 'batchId is immutable; projects cannot move between programs.' });
+      return;
+    }
+    delete payload.batchId;
+
     const previousValue = { projectName: project.projectName, status: project.status, order: project.order };
-    
+
     Object.assign(project, payload);
     await project.save();
 
@@ -103,7 +147,13 @@ export const deleteProject = async (req: Request, res: Response): Promise<void> 
 
 export const getOrientations = async (req: Request, res: Response): Promise<void> => {
   try {
-    const orientations = await Orientation.find().sort({ createdAt: -1 });
+    const batchId = batchIdFromQuery(req) || req.programContext?.batchId;
+    if (!batchId) {
+      res.status(200).json([]);
+      return;
+    }
+    const filter = { batchId: new Types.ObjectId(batchId) };
+    const orientations = await Orientation.find(filter).sort({ createdAt: -1 });
     res.status(200).json(orientations);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching orientations', error });
@@ -114,18 +164,27 @@ export const uploadOrientation = async (req: Request, res: Response): Promise<vo
   try {
     const { title, description, transcript: customTranscript } = req.body;
     let videoUrl = '';
-    
+
+    // v1.69 — multi-program scoping: every orientation write requires
+    // a valid batchId so we never write a row without a program
+    // owner. Accepts batchId from body or query string.
+    const rawBatchId = (req.body?.batchId as string | undefined) ?? batchIdFromQuery(req);
+    if (!rawBatchId || !Types.ObjectId.isValid(rawBatchId)) {
+      res.status(400).json({ message: 'A valid batchId is required to create an orientation.' });
+      return;
+    }
+
     // Using multer, the file will be in req.file
     if (req.file) {
       videoUrl = `/uploads/orientations/${req.file.filename}`;
     }
 
     // Use provided transcript or fallback
-    const transcript = customTranscript || `Welcome to the organization! This is the orientation video. 
-Here is how the contribution process works: First, you find an issue to work on. 
-Then, you fork the repository and make your changes. 
-After that, you submit a pull request. 
-Pull requests are reviewed by the core maintainers. 
+    const transcript = customTranscript || `Welcome to the organization! This is the orientation video.
+Here is how the contribution process works: First, you find an issue to work on.
+Then, you fork the repository and make your changes.
+After that, you submit a pull request.
+Pull requests are reviewed by the core maintainers.
 During onboarding, you are expected to read the guidelines and complete your first task.
 If you need help, please ask in the #help channel on our community platform.`;
 
@@ -133,7 +192,8 @@ If you need help, please ask in the #help channel on our community platform.`;
       title,
       description,
       videoUrl,
-      transcript
+      transcript,
+      batchId: new Types.ObjectId(rawBatchId),
     });
 
     await orientation.save();
@@ -280,7 +340,13 @@ export const updateOnboardingStatus = async (req: Request, res: Response): Promi
 
 export const getOnboardingAuditLogs = async (req: Request, res: Response): Promise<void> => {
   try {
-    const logs = await OnboardingAuditLog.find()
+    const batchId = batchIdFromQuery(req) || req.programContext?.batchId;
+    if (!batchId) {
+      res.status(200).json([]);
+      return;
+    }
+    const filter = { batchId: new Types.ObjectId(batchId) };
+    const logs = await OnboardingAuditLog.find(filter)
       .populate('changedBy', 'name email')
       .sort({ createdAt: -1 })
       .limit(100);
@@ -437,7 +503,13 @@ export const regenerateZoomAssessmentPool = async (req: Request, res: Response):
 
 export const getZoomSessions = async (req: Request, res: Response): Promise<void> => {
   try {
-    const sessions = await ZoomSession.find().sort({ createdAt: -1 });
+    const batchId = batchIdFromQuery(req) || req.programContext?.batchId;
+    if (!batchId) {
+      res.status(200).json([]);
+      return;
+    }
+    const sessionFilter = { batchId: new Types.ObjectId(batchId) };
+    const sessions = await ZoomSession.find(sessionFilter).sort({ createdAt: -1 });
     const sessionList = [];
     const { default: ZoomAssessmentQuestion } = await import('../zoom/zoom-assessment-question.model.js');
     const { default: ZoomAssessmentAttempt } = await import('../zoom/zoom-assessment-attempt.model.js');
@@ -489,6 +561,16 @@ export const createZoomSession = async (req: Request, res: Response): Promise<vo
       res.status(400).json({ message: 'Title, description and Zoom URL are required' });
       return;
     }
+    // v1.69 — multi-program scoping: every ZoomSession write requires
+    // a valid batchId so sessions live inside a single program. The
+    // active session lookup below also filters by batchId so
+    // activating a session in program A doesn't deactivate the
+    // active session in program B.
+    const rawBatchId = (req.body?.batchId as string | undefined) ?? batchIdFromQuery(req);
+    if (!rawBatchId || !Types.ObjectId.isValid(rawBatchId)) {
+      res.status(400).json({ message: 'A valid batchId is required to create a Zoom session.' });
+      return;
+    }
     const session = await ZoomSession.create({
       title,
       description,
@@ -497,7 +579,8 @@ export const createZoomSession = async (req: Request, res: Response): Promise<vo
       dailyResetTime: dailyResetTime || '09:00 AM',
       passScore: passScore ?? 70,
       questionCount: zoomQuestionCount ?? 10,
-      isActive: false
+      isActive: false,
+      batchId: new Types.ObjectId(rawBatchId),
     });
     res.status(201).json(session);
   } catch (error) {
@@ -572,7 +655,13 @@ export const activateZoomSession = async (req: Request, res: Response): Promise<
       return;
     }
 
-    await ZoomSession.updateMany({}, { $set: { isActive: false } });
+    // v1.69 — multi-program scoping: deactivating other sessions
+    // should only affect sessions in the SAME program. Previously
+    // this deactivated every active session across all programs.
+    await ZoomSession.updateMany(
+      { batchId: session.batchId },
+      { $set: { isActive: false } },
+    );
     session.isActive = true;
     await session.save();
 

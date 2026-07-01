@@ -34,6 +34,7 @@ export default function CommunityPage() {
 
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('newest');
+  const [showAllPrograms, setShowAllPrograms] = useState(false);
   const [search, setSearch] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('search') || '';
@@ -57,6 +58,7 @@ export default function CommunityPage() {
         limit: 20,
         filter,
         sort,
+        batchId: showAllPrograms ? 'all' : undefined,
         ...(reset ? {} : nextCursor ? { cursor: nextCursor } : {}),
       },
     })
@@ -72,7 +74,7 @@ export default function CommunityPage() {
         setLoading(false);
         setLoadingMore(false);
       });
-  }, [filter, sort, nextCursor]);
+  }, [filter, sort, nextCursor, showAllPrograms]);
 
   // Thread detail: when a post ID is set, show ThreadDetail instead of the list/dialog
   const handleOpenThread = useCallback((postId: string) => {
@@ -128,14 +130,14 @@ export default function CommunityPage() {
   useEffect(() => {
     fetchPosts(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, sort]);
+  }, [filter, sort, showAllPrograms]);
 
   // Reset cursor + posts when filter/sort changes so we paginate the
   // newly-filtered set from the beginning.
   useEffect(() => {
     setNextCursor(null);
     setPosts([]);
-  }, [filter, sort]);
+  }, [filter, sort, showAllPrograms]);
 
   // ── Infinite scroll — fetch the next page when the sentinel enters view ────
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -154,12 +156,14 @@ export default function CommunityPage() {
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasMore, loading, loadingMore, nextCursor, filter, sort]);
+  }, [hasMore, loading, loadingMore, nextCursor, filter, sort, showAllPrograms]);
 
   const runSemanticSearch = useCallback(async (q: string) => {
     setSearchLoading(true);
     try {
-      const res = await api.get<{ results: Post[] }>('/community/search', { params: { q } });
+      const res = await api.get<{ results: Post[] }>('/community/search', {
+        params: { q, batchId: showAllPrograms ? 'all' : undefined }
+      });
       setSearchResults(res.data.results || []);
     } catch (err) {
       console.error(friendlyError(err, 'Failed to load posts.'));
@@ -167,7 +171,7 @@ export default function CommunityPage() {
     } finally {
       setSearchLoading(false);
     }
-  }, []);
+  }, [showAllPrograms]);
 
   // v2 — search is now Enter-only. We still keep the trimmed query handy
   // for downstream effects (filter/sort re-apply on existing results).
@@ -354,23 +358,34 @@ export default function CommunityPage() {
           </div>
         )}
 
-        {!loading && !error && total > 0 && (
+        {!loading && !error && (
           <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-            <div className="flex gap-1 p-1 bg-mist rounded-xl w-fit">
-              {[
-                { key: 'all', label: 'All' },
-                { key: 'unanswered', label: 'Unanswered' },
-                { key: 'open', label: 'Open' },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setFilter(key)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
-                    ${filter === key ? 'bg-card text-ink shadow-subtle' : 'text-ink-soft hover:text-ink'}`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex gap-1 p-1 bg-mist rounded-xl w-fit">
+                {[
+                  { key: 'all', label: 'All' },
+                  { key: 'unanswered', label: 'Unanswered' },
+                  { key: 'open', label: 'Open' },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setFilter(key)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
+                      ${filter === key ? 'bg-card text-ink shadow-subtle' : 'text-ink-soft hover:text-ink'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <select
+                value={showAllPrograms ? 'all' : 'active'}
+                onChange={(e) => setShowAllPrograms(e.target.value === 'all')}
+                className="px-3 py-1.5 rounded-xl border border-border bg-card text-xs text-ink-soft focus:outline-none focus:ring-2 focus:ring-accent/25 cursor-pointer"
+              >
+                <option value="active">Active Program Feed</option>
+                <option value="all">All Programs Feed</option>
+              </select>
             </div>
 
             <select

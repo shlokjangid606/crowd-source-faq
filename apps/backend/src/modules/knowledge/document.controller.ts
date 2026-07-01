@@ -145,6 +145,7 @@ export async function uploadDocument(req: Request, res: Response): Promise<void>
       mimeType: record.mimeType,
       title: record.title,
       uploaderUserId: userId.toString(),
+      batchId: record.batchId?.toString() || req.programContext?.batchId?.toString(),
     });
     record.jobId = jobId;
     await record.save();

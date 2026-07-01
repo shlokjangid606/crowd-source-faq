@@ -671,6 +671,17 @@ export default function PostDetailDialog({ post: initialPost, onClose, currentUs
             <div className="min-w-0">
               <h2 id="post-dialog-title" className="text-base font-semibold text-ink leading-snug">{post.title}</h2>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                {(() => {
+                  const programName = typeof post.batchId === 'object' && post.batchId !== null && 'name' in post.batchId
+                    ? (post.batchId as { name: string }).name
+                    : null;
+                  if (!programName) return null;
+                  return (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-accent/10 border border-accent/25 text-[9px] font-bold text-accent uppercase tracking-wider">
+                      {programName}
+                    </span>
+                  );
+                })()}
                 <Badge variant={isAnswered ? 'success' : 'warning'}>{isAnswered ? '✓ Answered' : '○ Open'}</Badge>
                 <span className="text-xs text-ink-soft">by {post.author?.name || 'Student'}</span>
                 <span className="text-xs text-ink-faint">·</span>

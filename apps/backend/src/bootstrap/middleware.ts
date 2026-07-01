@@ -6,6 +6,7 @@ import connectDB from '../config/db.js';
 import { runWithContext } from '../utils/http/requestContext.js';
 import { requestLogger } from '../utils/http/requestLogger.js';
 import { ingestFrontendLog } from '../utils/http/fileLogger.js';
+import { programScope } from '../middleware/programScope.js';
 
 export function registerMiddleware(app: Express, config: any): void {
   // 1. Trust the proxy hops
@@ -69,6 +70,9 @@ export function registerMiddleware(app: Express, config: any): void {
 
   // 7. Body Parsing
   app.use(express.json());
+
+  // 7.5. Global Program Scoping (soft)
+  app.use(programScope({ required: false }));
 
   // 8. Minimal Cookie parser
   app.use((req: Request, _res: Response, next: (e?: unknown) => void) => {

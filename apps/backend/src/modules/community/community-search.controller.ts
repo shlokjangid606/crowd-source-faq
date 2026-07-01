@@ -82,11 +82,15 @@ export const searchCommunityPosts = async (req: Request, res: Response): Promise
   try {
     const q = String(req.query.q || '').trim();
 
-    const batchIdParam = (req.query.batchId as string | undefined) ?? null;
+    const rawBatchId = req.query.batchId;
+    const batchIdParam = rawBatchId === 'all'
+      ? null
+      : (rawBatchId as string | undefined || req.programContext?.batchId?.toString() || null);
     if (!q) {
       const posts = await CommunityPost.find(withProgramScope({}, batchIdParam))
         .select('-embedding')
         .populate('author', 'name')
+        .populate('batchId', 'name')
         .populate('comments.author', 'name')
         .sort({ createdAt: -1 })
         .limit(30);
@@ -111,6 +115,7 @@ export const searchCommunityPosts = async (req: Request, res: Response): Promise
     const hydrated = await CommunityPost.find(withProgramScope({ _id: { $in: ids } }, batchIdParam))
       .select('-embedding')
       .populate('author', 'name')
+      .populate('batchId', 'name')
       .populate('comments.author', 'name');
 
     const hydratedMap = new Map(hydrated.map((doc) => [doc._id.toString(), doc]));

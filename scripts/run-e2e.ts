@@ -108,7 +108,7 @@ const run = async () => {
     console.log('[E2E Orchestrator] Frontend is ready!');
 
     console.log('[E2E Orchestrator] Running Playwright E2E Tests...');
-    
+
     // Install playwright browsers if not installed
     const installPlaywright = spawn('npx', ['playwright', 'install', 'chromium'], {
       cwd: rootDir,
@@ -144,7 +144,7 @@ const run = async () => {
     process.exitCode = 1;
   } finally {
     console.log('[E2E Orchestrator] Cleaning up servers and resources...');
-    
+
     if (backendProcess) {
       console.log('[E2E Orchestrator] Terminating Backend process...');
       backendProcess.kill('SIGTERM');

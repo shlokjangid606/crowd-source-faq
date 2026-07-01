@@ -36,6 +36,7 @@ export interface DocumentJobData {
   mimeType: string;
   title: string;
   uploaderUserId: string;
+  batchId?: string;
 }
 
 export interface DocumentJobResult {

@@ -9,6 +9,7 @@ import { registerRoutes } from './routes.js';
 import { getMetrics } from '../utils/http/metrics.js';
 import { logger } from '../utils/http/logger.js';
 import { internalApiKeyOrAdmin } from '../middleware/internalApiKeyOrAdmin.js';
+import { getContext } from '../utils/http/requestContext.js';
 
 export function createApp(config: any): Express {
   // Initialize Sentry
@@ -26,6 +27,60 @@ export function createApp(config: any): Express {
   // Track unhandled promise rejections
   process.on('unhandledRejection', (reason) => {
     Sentry.captureException(reason);
+  });
+
+  // Register Mongoose Global Program Scoping Plugin
+  mongoose.plugin((schema) => {
+    if (schema.path('batchId')) {
+      const queryMethods = [
+        'find',
+        'findOne',
+        'countDocuments',
+        'updateOne',
+        'updateMany',
+        'deleteOne',
+        'deleteMany',
+        'findOneAndDelete',
+        'findOneAndReplace',
+        'findOneAndUpdate',
+        'replaceOne',
+      ];
+
+      queryMethods.forEach((method) => {
+        schema.pre(method as any, function (this: any, next: any) {
+          const batchId = getContext()?.batchId;
+          if (batchId) {
+            const filter = this.getFilter();
+            if (!Object.prototype.hasOwnProperty.call(filter, 'batchId')) {
+              this.where({ batchId: new mongoose.Types.ObjectId(batchId) });
+            }
+          }
+          next();
+        });
+      });
+
+      schema.pre('save', function (this: any, next: any) {
+        const batchId = getContext()?.batchId;
+        if (batchId && !this.batchId) {
+          this.batchId = new mongoose.Types.ObjectId(batchId);
+        }
+        next();
+      });
+
+      schema.pre('aggregate', function (this: any, next: any) {
+        const batchId = getContext()?.batchId;
+        if (batchId) {
+          const pipeline = this.pipeline();
+          const hasBatchIdFilter = pipeline.some((stage: any) => 
+            stage.$match && Object.prototype.hasOwnProperty.call(stage.$match, 'batchId')
+          );
+          if (!hasBatchIdFilter) {
+            pipeline.unshift({ $match: { batchId: new mongoose.Types.ObjectId(batchId) } });
+          }
+        }
+        next();
+      });
+    }
   });
 
   const app = express();
