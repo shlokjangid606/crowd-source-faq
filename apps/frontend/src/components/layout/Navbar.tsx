@@ -183,8 +183,8 @@ export default function Navbar({ showProgramSwitcher: _showProgramSwitcher = fal
                   <ZoomBubble />
                   {/* Spurti Points chip */}
                   <SpurtiChip />
-                  {user?.role === 'admin' && (
-                    <BatchSwitcher showCreateLink={true} className="hidden md:inline-flex" />
+                  {isAuthenticated && (
+                    <BatchSwitcher showCreateLink={user?.role === 'admin'} className="hidden md:inline-flex" />
                   )}
 
                   <NotificationBell />
