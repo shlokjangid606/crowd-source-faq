@@ -7,6 +7,7 @@ import { startEscalationScheduler, stopEscalationScheduler } from '../modules/co
 import { runScheduledAutoAnswer, stopAutoAnswerScheduler } from '../modules/ai/auto-answer.controller.js';
 import { runScheduledFAQAudit, stopFAQAuditScheduler } from '../modules/faq/faq-audit.controller.js';
 import { startDocumentWorker, stopDocumentWorker } from '../utils/jobs/documentQueue.js';
+import { notificationsService } from '../services/notifications.service.js';
 import { cronManager } from '../core/scheduler/cronManager.js';
 import mongoose from 'mongoose';
 import { jobQueue } from '../utils/http/jobQueue.js';
@@ -76,6 +77,12 @@ export async function startup(config: any): Promise<void> {
   runScheduledAutoAnswer().catch((err) => logger.error(`[autoAnswer] Startup: ${(err as Error).message}`));
   runScheduledFAQAudit().catch((err) => logger.error(`[faqAudit] Startup: ${(err as Error).message}`));
 
+  // Phase 1 R3 — drain any pending notification outbox rows on startup
+  // so a restart doesn't sit on unsent notifications. Best-effort.
+  notificationsService.drain().catch((err) =>
+    logger.error(`[notifications] Startup drain failed: ${(err as Error).message}`),
+  );
+
   void startBot().catch((err) => logger.error(`[bot] startup: ${(err as Error).message}`));
   void botManager.startAll().catch((err) => logger.error(`[botManager] startAll: ${(err as Error).message}`));
 
@@ -92,6 +99,15 @@ export async function startup(config: any): Promise<void> {
     handler: runFreshnessCheck,
     intervalMs: config.cron.freshnessCheckIntervalMs,
     runOnStartup: true,
+  });
+
+  // Phase 1 R3 — drain the notification outbox every 60s. Retries
+  // any notifications that failed to persist on the original call.
+  cronManager.register({
+    name: 'notification-outbox-drain',
+    handler: () => notificationsService.drain(),
+    intervalMs: 60_000,
+    runOnStartup: false,
   });
 
   cronManager.register({
