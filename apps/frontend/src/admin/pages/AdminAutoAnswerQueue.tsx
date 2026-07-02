@@ -88,6 +88,26 @@ function formatDate(iso?: string | null): string {
   }
 }
 
+function relativeTime(iso?: string | null): string {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return '';
+  const diffMs = Date.now() - then;
+  if (diffMs < 0) return 'just now';
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return `${sec} seconds ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} minute${min === 1 ? '' : 's'} ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} hour${hr === 1 ? '' : 's'} ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 30) return `${day} day${day === 1 ? '' : 's'} ago`;
+  const mo = Math.floor(day / 30);
+  if (mo < 12) return `${mo} month${mo === 1 ? '' : 's'} ago`;
+  const yr = Math.floor(day / 365);
+  return `${yr} year${yr === 1 ? '' : 's'} ago`;
+}
+
 interface ActionButtonsProps {
   pending: boolean;
   onApprove: () => void;
@@ -158,6 +178,355 @@ interface DiffViewProps {
  * via a simple character-level diff (no library): compare the two strings and
  * mark runs in the admin edit that don't appear in the AI draft.
  */
+interface AiDecision {
+  aiAnswerStatus?: AiAnswerStatus | string | null;
+  aiAnswerConfidence?: number | null;
+  aiAnswerSource?: string | null;
+  lastAutoAnswerAt?: string | null;
+  aiAnswerAttempts?: number | null;
+}
+
+interface ContextSnapshotResponse {
+  postId: string;
+  snapshot: AiContext;
+  decision: AiDecision;
+}
+
+interface ContextModalProps {
+  open: boolean;
+  postId: string;
+  postTitle: string;
+  onClose: () => void;
+}
+
+/**
+ * "Why did AI decide this?" drill-down modal.
+ * Lazily fetches GET /admin/auto-answer/:postId/context on open and caches the
+ * response for the lifetime of this component instance. Renders the full
+ * retrieval snapshot + decision metadata so admins can audit why the AI
+ * landed on its suggestion.
+ */
+function ContextModal({ open, postId, postTitle, onClose }: ContextModalProps) {
+  const [data, setData] = useState<ContextSnapshotResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    if (data || loading) return;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setNotFound(false);
+    (async () => {
+      try {
+        const r = await adminApi.get<ContextSnapshotResponse>(
+          `/admin/auto-answer/${postId}/context`,
+        );
+        if (cancelled) return;
+        setData(r.data);
+      } catch (e: unknown) {
+        if (cancelled) return;
+        const status =
+          (e as { response?: { status?: number } })?.response?.status ?? 0;
+        if (status === 404) {
+          setNotFound(true);
+        } else {
+          setError(friendlyError(e, 'failed to load context'));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Re-run only when open/postId changes; data/loading are derived inside.
+  }, [open, postId]);
+
+  if (!open) return null;
+
+  const decision = data?.decision;
+  const snapshot = data?.snapshot;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="AI decision drill-down"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.5)',
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        padding: '24px',
+        overflowY: 'auto',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      data-testid="ai-context-modal"
+    >
+      <div
+        className="bg-card border border-border rounded-2xl shadow-xl"
+        style={{
+          width: '100%',
+          maxWidth: '720px',
+          maxHeight: 'calc(100vh - 48px)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-border">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold text-ink-faint uppercase tracking-widest">
+              AI decision drill-down
+            </p>
+            <h2 className="text-sm font-semibold text-ink mt-0.5 truncate">
+              {postTitle}
+            </h2>
+            {decision && (
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <Badge
+                  status={
+                    decision.aiAnswerStatus === 'approved'
+                      ? 'approved'
+                      : decision.aiAnswerStatus === 'rejected'
+                      ? 'rejected'
+                      : decision.aiAnswerStatus === 'ask_human' ||
+                        decision.aiAnswerStatus === 'escalated' ||
+                        decision.aiAnswerStatus === 'suggested' ||
+                        decision.aiAnswerStatus === 'pending'
+                      ? 'pending'
+                      : 'default'
+                  }
+                  label={decision.aiAnswerStatus ?? 'pending'}
+                  showDot={false}
+                />
+                {decision.aiAnswerConfidence != null && (
+                  <span className="text-[10px] text-ink-soft">
+                    {Math.round(Number(decision.aiAnswerConfidence) * 100)}%
+                    conf
+                  </span>
+                )}
+                {decision.aiAnswerSource && (
+                  <span className="text-[10px] text-ink-faint">
+                    source: {decision.aiAnswerSource}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close drill-down"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-faint hover:text-ink hover:bg-mist transition-colors flex-shrink-0"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div
+          className="px-5 py-4 space-y-5"
+          style={{ overflowY: 'auto', flex: 1 }}
+        >
+          {loading && (
+            <div
+              data-testid="ai-context-loading"
+              className="space-y-2 animate-pulse"
+            >
+              <div className="h-3 bg-mist rounded w-1/3" />
+              <div className="h-3 bg-mist rounded w-2/3" />
+              <div className="h-3 bg-mist rounded w-1/2" />
+            </div>
+          )}
+
+          {!loading && notFound && (
+            <div className="text-xs px-4 py-3 rounded-xl bg-mist border border-border text-ink-soft">
+              No context snapshot for this post yet.
+            </div>
+          )}
+
+          {!loading && error && (
+            <div className="text-xs px-4 py-3 rounded-xl bg-danger/5 border border-danger/20 text-danger">
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && !notFound && data && (
+            <>
+              {/* Decision panel */}
+              <section>
+                <p className="text-[10px] font-semibold text-ink-faint uppercase tracking-widest mb-2">
+                  Decision
+                </p>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                  <dt className="text-ink-faint">Status</dt>
+                  <dd className="text-ink font-mono">
+                    {decision?.aiAnswerStatus ?? '—'}
+                  </dd>
+                  <dt className="text-ink-faint">Confidence</dt>
+                  <dd className="text-ink">
+                    {decision?.aiAnswerConfidence != null
+                      ? `${Math.round(Number(decision.aiAnswerConfidence) * 100)}%`
+                      : '—'}
+                  </dd>
+                  <dt className="text-ink-faint">Source</dt>
+                  <dd className="text-ink font-mono">
+                    {decision?.aiAnswerSource ?? '—'}
+                  </dd>
+                  <dt className="text-ink-faint">Decided at</dt>
+                  <dd className="text-ink">
+                    {decision?.lastAutoAnswerAt
+                      ? `${formatDate(decision.lastAutoAnswerAt)} (${relativeTime(
+                          decision.lastAutoAnswerAt,
+                        )})`
+                      : '—'}
+                  </dd>
+                  <dt className="text-ink-faint">Attempts</dt>
+                  <dd className="text-ink">
+                    {decision?.aiAnswerAttempts ?? 0}
+                  </dd>
+                </dl>
+              </section>
+
+              {/* Context panel */}
+              <section>
+                <p className="text-[10px] font-semibold text-ink-faint uppercase tracking-widest mb-2">
+                  Retrieval context
+                </p>
+                {snapshot?.query ? (
+                  <p className="text-xs text-ink-soft mb-3">
+                    Query:{' '}
+                    <span className="font-mono text-ink">
+                      {snapshot.query}
+                    </span>
+                  </p>
+                ) : null}
+                {snapshot?.takenAt && (
+                  <p className="text-[10px] text-ink-faint mb-3">
+                    Snapshot taken {relativeTime(snapshot.takenAt)} ·{' '}
+                    {formatDate(snapshot.takenAt)}
+                  </p>
+                )}
+                <div className="space-y-2">
+                  {(snapshot?.hits ?? []).length === 0 && (
+                    <p className="text-xs text-ink-faint italic">
+                      No hits in snapshot.
+                    </p>
+                  )}
+                  {(snapshot?.hits ?? []).map((hit) => (
+                    <div
+                      key={`${hit.source}-${hit.rank}-${hit.sourceId}`}
+                      className="rounded-xl border border-border bg-card p-3"
+                    >
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-mono font-semibold text-accent">
+                          {hit.source}:{truncate(hit.sourceId, 16)}
+                        </span>
+                        <span className="text-[10px] text-ink-faint">
+                          rank #{hit.rank} · score {hit.score.toFixed(2)} · conf{' '}
+                          {(hit.confidence * 100).toFixed(0)}% · age{' '}
+                          {hit.ageDays}d
+                        </span>
+                        {hit.batchId && (
+                          <span
+                            className="text-[10px] font-mono text-ink-faint ml-auto"
+                            title="Retrieval batch id"
+                          >
+                            batch: {truncate(hit.batchId, 20)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-ink mt-1 text-left">
+                        {hit.question}
+                      </p>
+                      <p className="text-xs text-ink-soft mt-1 whitespace-pre-wrap leading-relaxed text-left">
+                        {truncate(hit.answer, 400)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Sources panel */}
+              <section>
+                <p className="text-[10px] font-semibold text-ink-faint uppercase tracking-widest mb-2">
+                  Sources
+                </p>
+                {(snapshot?.sources ?? []).length === 0 ? (
+                  <p className="text-xs text-ink-faint italic">
+                    No source breakdown available.
+                  </p>
+                ) : (
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-left text-ink-faint">
+                        <th className="font-medium py-1 pr-2">Name</th>
+                        <th className="font-medium py-1 pr-2">Returned</th>
+                        <th className="font-medium py-1">Weight</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(snapshot?.sources ?? []).map((s) => (
+                        <tr key={s.name} className="border-t border-border">
+                          <td className="py-1 pr-2 font-mono text-ink">
+                            {s.name}
+                          </td>
+                          <td className="py-1 pr-2 text-ink-soft">
+                            {s.returned}
+                          </td>
+                          <td className="py-1 text-ink-soft">
+                            {Number.isFinite(s.weight)
+                              ? s.weight.toFixed(2)
+                              : String(s.weight)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </section>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-border flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-xs px-3.5 py-1.5 rounded-lg border border-border text-ink-soft hover:text-ink hover:bg-mist transition-all"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DiffView({ aiDraft, edit }: DiffViewProps) {
   const aiLines = aiDraft.split('\n');
   const editLines = edit.split('\n');
@@ -224,6 +593,8 @@ export default function AdminAutoAnswerQueue() {
   const [expandedPosts, setExpandedPosts] = useState<Record<string, boolean>>({});
   const [adminReplyByPost, setAdminReplyByPost] = useState<Record<string, string>>({});
   const [expandedHitsByPost, setExpandedHitsByPost] = useState<Record<string, Record<number, boolean>>>({});
+  // "Why did AI decide this?" drill-down — which post card has its modal open.
+  const [contextOpenByPost, setContextOpenByPost] = useState<Record<string, boolean>>({});
 
   // Counts for tab badges — fetched in parallel as count-only probes.
   const [tabCounts, setTabCounts] = useState<{ asked: number; suggested: number; all: number }>({
@@ -454,6 +825,11 @@ export default function AdminAutoAnswerQueue() {
       ...prev,
       [postId]: { ...(prev[postId] ?? {}), [rank]: !(prev[postId]?.[rank] ?? false) },
     }));
+
+  const openContextModal = (postId: string) =>
+    setContextOpenByPost((prev) => ({ ...prev, [postId]: true }));
+  const closeContextModal = (postId: string) =>
+    setContextOpenByPost((prev) => ({ ...prev, [postId]: false }));
 
   return (
     <div className="space-y-5 max-w-5xl">
@@ -776,6 +1152,36 @@ export default function AdminAutoAnswerQueue() {
                       onReject={(reason) => handleReject(post, reason)}
                       onAskAgain={(extra) => handleAskAgain(post, extra)}
                     />
+
+                    {/* "Why did AI decide this?" drill-down — only when the AI has
+                        actually produced a decision and persisted context for this
+                        post. Matches the existing `Ask AI Again` eligibility set
+                        (suggested / ask_human / escalated). */}
+                    {post.aiContext &&
+                      (post.aiAnswerStatus === 'suggested' ||
+                        post.aiAnswerStatus === 'ask_human' ||
+                        post.aiAnswerStatus === 'escalated') && (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => openContextModal(post._id)}
+                            className="text-[11px] px-3 py-1.5 rounded-lg bg-mist border border-border text-ink-soft hover:text-ink hover:bg-border transition-all"
+                          >
+                            Why did AI decide this?
+                          </button>
+                        </div>
+                      )}
+
+                    {/* Drill-down modal — only mounted while open so the lazy
+                        fetch + cache lifecycle is per-card. */}
+                    {contextOpenByPost[post._id] && (
+                      <ContextModal
+                        open={true}
+                        postId={post._id}
+                        postTitle={post.title}
+                        onClose={() => closeContextModal(post._id)}
+                      />
+                    )}
                   </div>
                 )}
               </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import React from 'react';
 import AdminAutoAnswerQueue from '../AdminAutoAnswerQueue';
 
@@ -283,5 +283,143 @@ describe('AdminAutoAnswerQueue', () => {
       const calls = mockApi.post.mock.calls.map((c) => c[0]);
       expect(calls).toContain('/admin/community/auto-answer');
     });
+  });
+
+  it('clicking "Why did AI decide this?" calls GET /admin/auto-answer/:postId/context', async () => {
+    // The initial queue fetch + counts probes use the first .get impl.
+    // The drill-down GET will return a snapshot payload.
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === '/admin/auto-answer/p1/context') {
+        return Promise.resolve({
+          data: {
+            postId: 'p1',
+            snapshot: {
+              hits: [
+                {
+                  source: 'faq',
+                  sourceId: 'faq-onboarding',
+                  question: 'Where are onboarding docs?',
+                  answer: 'Onboarding docs live at /docs/onboarding.',
+                  score: 0.92,
+                  confidence: 0.88,
+                  ageDays: 3,
+                  rank: 1,
+                  batchId: 'batch-abc',
+                },
+              ],
+              sources: [{ name: 'faq', returned: 1, weight: 1 }],
+              query: 'onboarding docs',
+              takenAt: '2024-01-01T00:00:00Z',
+            },
+            decision: {
+              aiAnswerStatus: 'suggested',
+              aiAnswerConfidence: 0.88,
+              aiAnswerSource: 'faq',
+              lastAutoAnswerAt: '2024-01-01T00:00:00Z',
+              aiAnswerAttempts: 1,
+            },
+          },
+        });
+      }
+      return Promise.resolve({
+        data: paginated([baseSuggestedPost as unknown as Record<string, unknown>], 1),
+      });
+    });
+
+    render(<AdminAutoAnswerQueue />);
+
+    // Expand the post so the drill-down button is rendered.
+    const titleButton = await screen.findByText(/Onboarding docs/);
+    fireEvent.click(titleButton);
+
+    const drillDownBtn = await screen.findByRole('button', {
+      name: /Why did AI decide this\?/i,
+    });
+    fireEvent.click(drillDownBtn);
+
+    await waitFor(() => {
+      const urls = mockApi.get.mock.calls.map((c) => c[0]);
+      expect(urls).toContain('/admin/auto-answer/p1/context');
+    });
+  });
+
+  it('modal renders the snapshot data after the context fetch resolves', async () => {
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === '/admin/auto-answer/p1/context') {
+        return Promise.resolve({
+          data: {
+            postId: 'p1',
+            snapshot: {
+              hits: [
+                {
+                  source: 'faq',
+                  sourceId: 'faq-onboarding',
+                  question: 'Where are onboarding docs?',
+                  answer: 'Onboarding docs live at /docs/onboarding.',
+                  score: 0.92,
+                  confidence: 0.88,
+                  ageDays: 3,
+                  rank: 1,
+                  batchId: 'batch-xyz',
+                },
+                {
+                  source: 'kb',
+                  sourceId: 'kb-101',
+                  question: 'New user checklist',
+                  answer: 'Welcome new users with this checklist.',
+                  score: 0.8,
+                  confidence: 0.72,
+                  ageDays: 12,
+                  rank: 2,
+                },
+              ],
+              sources: [
+                { name: 'faq', returned: 1, weight: 1 },
+                { name: 'kb', returned: 1, weight: 0.8 },
+              ],
+              query: 'onboarding docs',
+              takenAt: '2024-01-01T00:00:00Z',
+            },
+            decision: {
+              aiAnswerStatus: 'suggested',
+              aiAnswerConfidence: 0.88,
+              aiAnswerSource: 'faq',
+              lastAutoAnswerAt: '2024-01-01T00:00:00Z',
+              aiAnswerAttempts: 1,
+            },
+          },
+        });
+      }
+      return Promise.resolve({
+        data: paginated([baseSuggestedPost as unknown as Record<string, unknown>], 1),
+      });
+    });
+
+    render(<AdminAutoAnswerQueue />);
+
+    const titleButton = await screen.findByText(/Onboarding docs/);
+    fireEvent.click(titleButton);
+
+    const drillDownBtn = await screen.findByRole('button', {
+      name: /Why did AI decide this\?/i,
+    });
+    fireEvent.click(drillDownBtn);
+
+    // The modal dialog becomes visible.
+    const dialog = await screen.findByRole('dialog', {
+      name: /AI decision drill-down/i,
+    });
+    expect(dialog).toBeInTheDocument();
+
+    // Decision panel values appear (scoped to the dialog so we don't match
+    // the inline Source Citations block that lives outside the modal).
+    expect(within(dialog).getByText(/^88%$/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Query:/)).toBeInTheDocument();
+    // Snapshot has two hits — the modal lists both, not just the 3-cap of the inline view.
+    expect(within(dialog).getByText(/faq:faq-onboarding/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/kb:kb-101/i)).toBeInTheDocument();
+    // Source breakdown table inside the modal.
+    const rows = within(dialog).getAllByRole('row');
+    expect(rows.length).toBeGreaterThanOrEqual(3); // header + 2 sources
   });
 });
