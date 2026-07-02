@@ -40,6 +40,7 @@ import { kbTextSource } from './retrievalSources/kbTextSource.js';
 import { communityTextSource } from './retrievalSources/communityTextSource.js';
 import { commentsSource } from './retrievalSources/commentsSource.js';
 import { recentActivitySource } from './retrievalSources/recentActivitySource.js';
+import { webTextSource } from './retrievalSources/webTextSource.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -242,6 +243,7 @@ export function registerDefaultSources(): void {
   registerSource(communityTextSource);
   registerSource(commentsSource);
   registerSource(recentActivitySource);
+  registerSource(webTextSource);
 }
 
 // Auto-register on module load — the retriever is supposed to be
