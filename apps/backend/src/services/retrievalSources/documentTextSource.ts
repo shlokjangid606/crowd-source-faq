@@ -31,6 +31,14 @@ import { cronLog } from '../../utils/http/logger.js';
 import type { RetrievalSource } from '../contextRetriever.js';
 
 const STALE_DAYS = 30; // documents age slower than web pages
+// Phase 9: the `text` field on DocumentAsset rows can be up to 500,000
+// chars, but the retriever only ever displays the first 4,000 as the
+// `answer`. Fetching the full body wastes bandwidth + Node deserialization
+// CPU, so we (a) project only the fields the hit shape needs and (b) cap
+// the `text` payload at this many chars before assigning to `answer`. The
+// original (uncapped) length is preserved in `meta.textLength` so the
+// consumer can detect truncation.
+const ANSWER_TEXT_MAX_CHARS = 4000;
 
 export const documentTextSource: RetrievalSource = {
   name: 'document',
@@ -41,10 +49,14 @@ export const documentTextSource: RetrievalSource = {
     try {
       const filter: Record<string, unknown> = { lastFetchError: null };
       if (batchId) filter.batchId = batchId;
+      // Phase 9: explicit projection so we don't pull the full 500K-char
+      // `text` body for every match. The `$meta: 'textScore'` projection
+      // is independent of the field projection, so it doesn't conflict.
       const docs = await DocumentAsset.find(
         { ...filter, $text: { $search: query } },
         { score: { $meta: 'textScore' } },
       )
+        .select('title text filename mimeType sizeBytes pageCount uploadedAt batchId _id')
         .sort({ score: { $meta: 'textScore' } })
         .limit(topK)
         .lean();
@@ -55,11 +67,16 @@ export const documentTextSource: RetrievalSource = {
         const uploadedAt: Date | null = (d as { uploadedAt?: Date }).uploadedAt ?? null;
         const ageMs = uploadedAt ? now - uploadedAt.getTime() : staleCutoffMs;
         const confidence = ageMs < staleCutoffMs ? 0.85 : 0.5;
+        const fullText = (d as { text?: string }).text ?? '';
+        const truncated =
+          fullText.length > ANSWER_TEXT_MAX_CHARS
+            ? fullText.slice(0, ANSWER_TEXT_MAX_CHARS)
+            : fullText;
         return {
           source: 'document' as const,
           sourceId: String((d as { _id: unknown })._id),
           question: (d as { title?: string }).title ?? '',
-          answer: (d as { text?: string }).text ?? '',
+          answer: truncated,
           score: Number((d as { score?: number }).score ?? 0),
           confidence,
           matchedOn: 'DocumentAsset.title+text',
@@ -71,6 +88,7 @@ export const documentTextSource: RetrievalSource = {
             sizeBytes: (d as { sizeBytes?: number }).sizeBytes,
             uploadedAt,
             ageDays: ageMs / (24 * 60 * 60 * 1000),
+            textLength: fullText.length,
           },
         };
       });

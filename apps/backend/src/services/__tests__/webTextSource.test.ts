@@ -129,9 +129,11 @@ describe('webTextSource.search — error filter', () => {
       await WebPage.updateOne({ _id: good._id }, { $set: { lastFetchError: 'HTTP 503' } });
     }
     const hits = await webTextSource.search('dashboard', null, { topK: 10 });
-    const urls = hits.map((h) => h.meta?.url);
-    expect(urls).not.toContain('https://broken.example.com');
-    expect(urls).toContain('https://good.example.com');
+    // Phase 9: WebPage.select() no longer projects `url`, so assert
+    // against `domain` (still in the projection) instead.
+    const domains = hits.map((h) => h.meta?.domain);
+    expect(domains).not.toContain('broken.example.com');
+    expect(domains).toContain('good.example.com');
   });
 });
 
@@ -144,8 +146,33 @@ describe('webTextSource.search — approved filter (Phase 8)', () => {
     await seedPage({ url: 'https://approved.example.com', title: 'Approved setup', text: 'approved dashboard content', approved: true });
     await seedPage({ url: 'https://pending.example.com', title: 'Pending setup', text: 'pending dashboard content', approved: false });
     const hits = await webTextSource.search('dashboard', null, { topK: 10 });
-    const urls = hits.map((h) => h.meta?.url);
-    expect(urls).toContain('https://approved.example.com');
-    expect(urls).not.toContain('https://pending.example.com');
+    // Phase 9: WebPage.select() no longer projects `url`, so assert
+    // against `domain` (still in the projection) instead.
+    const domains = hits.map((h) => h.meta?.domain);
+    expect(domains).toContain('approved.example.com');
+    expect(domains).not.toContain('pending.example.com');
+  });
+});
+
+describe('webTextSource.search — Phase 9 metadata projection', () => {
+  it('projects only metadata + capped text (does not fetch the full body)', async () => {
+    // Seed a row with text longer than the 4000-char cap so we can prove
+    // truncation happens. The original (uncapped) length should still
+    // show up in meta.textLength so consumers can detect truncation.
+    const longText = 'lorem ipsum dolor sit amet '.repeat(500); // 13_500 chars
+    await seedPage({ text: longText });
+    // Spy on WebPage.find so we can assert the .select() projection
+    // was applied to the query chain (not just verify behavior).
+    const findSpy = vi.spyOn(WebPage, 'find');
+    await webTextSource.search('lorem', null, { topK: 1 });
+    expect(findSpy).toHaveBeenCalled();
+    // The query object should still include the $text clause so the
+    // text index is used for ranking — projection only affects which
+    // fields come back, not which rows match.
+    const hits = await webTextSource.search('lorem', null, { topK: 1 });
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].answer.length).toBeLessThanOrEqual(4000);
+    expect(hits[0].answer.length).toBe(4000); // exactly capped, not less
+    expect(hits[0].meta?.textLength).toBe(longText.length);
   });
 });

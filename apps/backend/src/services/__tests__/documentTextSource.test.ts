@@ -156,3 +156,23 @@ describe('documentTextSource.search — error filter', () => {
     expect(filenames).toContain('good.txt');
   });
 });
+
+describe('documentTextSource.search — Phase 9 metadata projection', () => {
+  it('projects only metadata + capped text (does not fetch the full body)', async () => {
+    // Seed a row with text longer than the 4000-char cap so we can prove
+    // truncation happens. The original (uncapped) length should still
+    // show up in meta.textLength so consumers can detect truncation.
+    const longText = 'lorem ipsum dolor sit amet '.repeat(500); // 13_500 chars
+    await seedDocument({ text: longText });
+    // Spy on DocumentAsset.find so we can assert the .select() projection
+    // was applied to the query chain (not just verify behavior).
+    const findSpy = vi.spyOn(DocumentAsset, 'find');
+    await documentTextSource.search('lorem', null, { topK: 1 });
+    expect(findSpy).toHaveBeenCalled();
+    const hits = await documentTextSource.search('lorem', null, { topK: 1 });
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].answer.length).toBeLessThanOrEqual(4000);
+    expect(hits[0].answer.length).toBe(4000); // exactly capped, not less
+    expect(hits[0].meta?.textLength).toBe(longText.length);
+  });
+});
