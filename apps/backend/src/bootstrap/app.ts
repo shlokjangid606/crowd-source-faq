@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import * as Sentry from '@sentry/node';
-import { expressIntegration } from '@sentry/node';
+import type { ErrorEvent, EventHint } from '@sentry/node';
+import { expressIntegration, mongooseIntegration, setupExpressErrorHandler } from '@sentry/node';
 import mongoose from 'mongoose';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,17 +11,100 @@ import { getMetrics } from '../utils/http/metrics.js';
 import { logger } from '../utils/http/logger.js';
 import { internalApiKeyOrAdmin } from '../middleware/internalApiKeyOrAdmin.js';
 import { getContext } from '../utils/http/requestContext.js';
+import { sentryRequestTagsMiddleware } from '../utils/sentryTags.js';
+
+/**
+ * Strip PII from outgoing Sentry events.
+ *  - Authorization / Cookie headers
+ *  - request body (POSTs often contain emails, passwords, OAuth tokens)
+ *  - cookies from request headers
+ * sendDefaultPii:false already covers IP / user-agent; this is the belt-and-braces.
+ */
+function sentryBeforeSend(event: ErrorEvent, _hint: EventHint): ErrorEvent | null {
+  if (event.request) {
+    if (event.request.headers) {
+      const headers = event.request.headers as Record<string, unknown>;
+      delete headers['authorization'];
+      delete headers['Authorization'];
+      delete headers['cookie'];
+      delete headers['Cookie'];
+    }
+    if (event.request.data) {
+      delete event.request.data;
+    }
+    if (event.request.cookies) {
+      delete event.request.cookies;
+    }
+  }
+  return event;
+}
+
+/** Same PII scrub, but for transaction events (which have no ErrorEvent envelope). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function sentryBeforeSendTransaction(event: any, _hint: EventHint): any {
+  if (event.request) {
+    if (event.request.headers) {
+      const headers = event.request.headers as Record<string, unknown>;
+      delete headers['authorization'];
+      delete headers['Authorization'];
+      delete headers['cookie'];
+      delete headers['Cookie'];
+    }
+    if (event.request.data) {
+      delete event.request.data;
+    }
+    if (event.request.cookies) {
+      delete event.request.cookies;
+    }
+  }
+  return event;
+}
 
 export function createApp(config: any): Express {
-  // Initialize Sentry
-  if (config.observability.sentry.enabled) {
+  // ── Sentry init ────────────────────────────────────────────────────────────
+  // Two Sentry clients: one for the backend project (HTTP errors + traces),
+  // a second one for the DB project (Mongoose spans). Both share the same
+  // PII filtering and tagger middleware. Falls back to SENTRY_DSN for the DB
+  // client if SENTRY_DB_DSN is not set.
+  const sentryEnabled = config.observability.sentry.enabled;
+  const sentryDsn = process.env.SENTRY_DSN;
+  const sentryDbDsn = process.env.SENTRY_DB_DSN || sentryDsn;
+  const sentryEnv = process.env.SENTRY_ENV || config.server.env;
+  const sentryRelease = process.env.SENTRY_RELEASE;
+  const sentryDebug = process.env.SENTRY_DEBUG === 'true';
+  const sentryTracesSampleRate = config.observability.sentry.tracesSampleRate;
+
+  if (sentryEnabled && sentryDsn) {
     Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      environment: config.server.env,
+      dsn: sentryDsn,
+      environment: sentryEnv,
+      release: sentryRelease,
+      debug: sentryDebug,
+      sendDefaultPii: false,
+      tracesSampleRate: sentryTracesSampleRate,
       integrations: [
         expressIntegration(),
+        mongooseIntegration(),
       ],
-      tracesSampleRate: config.observability.sentry.tracesSampleRate,
+      beforeSend: sentryBeforeSend,
+      beforeSendTransaction: sentryBeforeSendTransaction,
+    });
+  }
+
+  // Separate client for DB spans — only if a different DSN is configured.
+  // (When SENTRY_DB_DSN is unset we fall back to the main client above, so
+  // this block is a no-op.)
+  if (sentryEnabled && sentryDbDsn && sentryDbDsn !== sentryDsn) {
+    Sentry.init({
+      dsn: sentryDbDsn,
+      environment: sentryEnv,
+      release: sentryRelease,
+      debug: sentryDebug,
+      sendDefaultPii: false,
+      tracesSampleRate: sentryTracesSampleRate,
+      integrations: [mongooseIntegration()],
+      beforeSend: sentryBeforeSend,
+      beforeSendTransaction: sentryBeforeSendTransaction,
     });
   }
 
@@ -87,6 +171,11 @@ export function createApp(config: any): Express {
 
   // Register all middlewares
   registerMiddleware(app, config);
+
+  // Sentry request-context tagger — sets batchId/userId/route as tags on the
+  // current Sentry scope so events/transaction traces can be filtered in the
+  // dashboard by program, user, or endpoint.
+  app.use(sentryRequestTagsMiddleware);
 
   // Register all routes
   registerRoutes(app);
@@ -156,7 +245,12 @@ export function createApp(config: any): Express {
   app.get('/', (req, res) => res.redirect('/csfaq/'));
   app.get('/csfaq', (req, res) => res.redirect('/csfaq/'));
 
-  // Global Error Handler
+  // Global Error Handler — Sentry captures the exception, then we log + respond.
+  // setupExpressErrorHandler installs the Express-aware Sentry error handler
+  // (handles setting transaction status, attaching request context, etc.).
+  if (sentryEnabled && sentryDsn) {
+    setupExpressErrorHandler(app);
+  }
   app.use((err: { status?: number; message?: string; stack?: string }, req: Request, res: Response, next: NextFunction) => {
     const requestId: string = (req as Request & { id: string }).id || '-';
     Sentry.captureException(err);

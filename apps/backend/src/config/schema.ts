@@ -256,6 +256,9 @@ export const ConfigSchema = z.object({
     sentry: z.object({
       enabled: z.boolean().default(true),
       tracesSampleRate: z.number().default(0.1),
+      // SENTRY_DSN, SENTRY_DB_DSN, SENTRY_RELEASE, SENTRY_ENV, SENTRY_DEBUG
+      // are read from process.env directly (see bootstrap/app.ts). The schema
+      // only owns the sample rate + on/off toggle.
     }),
     logging: z.object({
       level: z.string().default('info'),

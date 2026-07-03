@@ -258,7 +258,13 @@ retention:
 observability:
   sentry:
     enabled: true
-    tracesSampleRate: 0.1
+    tracesSampleRate: 0.1              # 10% of transactions traced (free-tier friendly)
+  # DSN, release, env, debug come from process.env (see apps/backend/.env):
+  #   SENTRY_DSN        — backend Express project DSN
+  #   SENTRY_DB_DSN     — separate DB project DSN for Mongoose spans (optional)
+  #   SENTRY_RELEASE    — e.g. v1.0.0+1 (set manually per deploy)
+  #   SENTRY_ENV        — environment label in Sentry UI
+  #   SENTRY_DEBUG      — verbose SDK logs (true/false)
   logging:
     level: info                        # debug | info | warn | error
     colorize: true
