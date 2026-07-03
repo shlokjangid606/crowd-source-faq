@@ -133,7 +133,7 @@ export default function Navbar({ showProgramSwitcher: _showProgramSwitcher = fal
       >
 
         {/* Logo */}
-        <div className="flex items-center justify-self-start">
+        <div className="flex items-center justify-self-start min-w-[140px] flex-shrink-0">
           <NavLink to="/" className="flex items-center gap-2.5 group w-fit">
             <img
               src={logoWide}
@@ -184,7 +184,7 @@ export default function Navbar({ showProgramSwitcher: _showProgramSwitcher = fal
                   <NotificationBell />
 
                   {/* User Avatar + Dropdown */}
-                  <div className="relative" ref={profileRef}>
+                  <div data-tour="user-profile" className="relative" ref={profileRef}>
                       <button
                         onClick={(e) => { e.stopPropagation(); setProfileOpen(!profileOpen); }}
                         className="flex items-center gap-1.5 cursor-pointer group"

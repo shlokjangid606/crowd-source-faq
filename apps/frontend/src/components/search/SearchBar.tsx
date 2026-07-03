@@ -162,7 +162,7 @@ const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(function Se
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`w-full ${variant === 'default' ? 'max-w-3xl mx-auto' : ''} ${className}`}>
+    <form data-tour="search-bar" onSubmit={handleSubmit} className={`w-full ${variant === 'default' ? 'max-w-3xl mx-auto' : ''} ${className}`}>
       <div ref={wrapperRef} className={`relative transition-all duration-300 ${variant === 'default' ? 'search-glow rounded-[26px]' : ''}`}>
         <div className={`absolute top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none ${variant === 'compact' ? 'left-3.5 w-4 h-4 group-focus-within:text-accent transition-colors' : 'left-4'}`}>
           <svg width={variant === 'compact' ? '16' : '18'} height={variant === 'compact' ? '16' : '18'} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

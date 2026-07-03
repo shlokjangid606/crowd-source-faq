@@ -51,13 +51,14 @@ export function NavPills() {
   const allNavItems = useNavItems();
 
   return (
-    <div className="flex items-center justify-center gap-1.5 px-1.5 py-[5px] rounded-full border-[1.5px] border-[rgb(var(--border-rgb)_/_0.6)] bg-[rgb(var(--bg-card-rgb)_/_0.85)] backdrop-blur-[24px] shadow-md transition-all duration-300 hover:bg-[rgb(var(--bg-card-rgb)_/_0.95)] z-50">
+    <div data-tour="nav-pills" className="flex items-center justify-center gap-1.5 px-1.5 py-[5px] rounded-full border-[1.5px] border-[rgb(var(--border-rgb)_/_0.6)] bg-[rgb(var(--bg-card-rgb)_/_0.85)] backdrop-blur-[24px] shadow-md transition-all duration-300 hover:bg-[rgb(var(--bg-card-rgb)_/_0.95)] z-50">
       {allNavItems.map(({ label, to, xlOnly }) => {
         const isWelcome = to === '/welcome';
         const needsPulse = isWelcome && user && !user.orientationCompleted;
 
         return (
           <NavLink
+            data-tour={`nav-pill-${label.toLowerCase().replace(/\s+/g, '-')}`}
             key={to}
             to={to}
             end={to === '/'}
