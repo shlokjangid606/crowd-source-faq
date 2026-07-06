@@ -310,3 +310,48 @@ export const accentChip         = 'inline-flex items-center gap-1.5 h-9 px-3 rou
 export const accentChipCompact  = 'inline-flex items-center gap-2 text-[11px] font-medium text-ink-faint bg-card/70 border border-border/60 rounded-full px-3 py-1';
 export const accentDot          = 'w-1.5 h-1.5 rounded-full bg-accent';
 export const accentTextMuted    = 'text-accent/70 font-medium';
+
+/* ── 23. Vote / feedback vote-pill base for faq review ────────────
+ * Two-button row (Accurate / Needs Update). Reusable. */
+
+export const votePillSingle      = 'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-medium transition-all';
+export const votePillAccent      = 'border-accent/40 bg-accent/10 text-accent';
+export const votePillAccentIdle  = 'border-border text-ink-soft hover:border-accent/30 hover:text-accent';
+export const votePillDanger      = 'border-danger/40 bg-danger-light text-danger';
+export const votePillDangerIdle  = 'border-border text-ink-soft hover:border-danger/30 hover:text-danger';
+
+/* ── 24. Tier selector pill (evergreen / seasonal / volatile) ─────
+ * The 3-button row in FreshnessTierSelector. */
+
+export const tierPillBase        = 'flex-1 py-2 px-3 rounded-xl border text-xs font-medium transition-all';
+export const tierPillAccent      = 'border-accent/40 bg-accent/10 text-accent';
+export const tierPillDanger      = 'border-danger/40 bg-danger-light text-danger';
+export const tierPillIdle        = 'border-border text-ink-soft hover:bg-mist';
+
+/* ── 25. Submit / danger action button (small variant) ──────────── */
+
+export const submitBtnDanger     = 'flex-1 py-1.5 text-xs rounded-lg bg-danger text-accent-text hover:bg-danger/85 transition-colors disabled:opacity-50';
+export const submitBtnGhost      = 'flex-1 py-1.5 text-xs rounded-lg border border-border text-ink-soft hover:bg-mist transition-colors';
+
+/* ── 26. Freshness / review badge ─────────────────────────────────
+ * Tiny inline pills used by FreshnessBadge. */
+
+export const badgePendingReview    = 'inline-flex items-center gap-1 text-xs font-medium text-warning bg-warning-light px-1.5 py-0.5 rounded';
+export const badgeUpdateRequested  = 'inline-flex items-center gap-1 text-xs font-medium text-warning bg-warning-light px-1.5 py-0.5 rounded';
+export const badgeVerified         = 'inline-flex items-center gap-1 text-xs text-accent';
+export const badgeVerifiedBold     = 'inline-flex items-center gap-1 text-xs text-accent font-medium';
+export const badgeVerifiedWarn     = 'inline-flex items-center gap-1 text-xs text-warning font-medium';
+export const badgeCompact          = 'text-[10px]';
+
+/* ── 27. Number input (review interval days) ────────────────────── */
+
+export const numberInput          = 'w-20 rounded-lg border border-border bg-mist px-2 py-1.5 text-xs text-ink text-center focus:outline-none focus:ring-2 focus:ring-accent/25';
+
+/* ── 28. Textarea with focus ring + tall variant ─────────────────
+ * Used by search feedback, suggest-answer, similar inline forms. */
+
+export const textAreaBase         = 'w-full rounded-xl border border-border bg-mist px-3 py-2 text-xs text-ink placeholder-ink-faint focus:outline-none focus:ring-2 focus:ring-accent/25 resize-none';
+
+/* ── 29. Empty-state padded text ────────────────────────────────── */
+
+export const emptyPaddedCenter    = 'text-xs text-ink-faint text-center py-8';
