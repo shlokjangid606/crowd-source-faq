@@ -3,117 +3,137 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════
-   THEME TOKENS — CSS custom properties
+   THEME TOKENS — CSS custom properties (single source of truth)
 
-   Portfolio-inspired "Yaksha" palette — premium, minimal, editorial.
-   No green / teal / blue / colourful accents anywhere. The single
-   accent is a warm sand / cream tone that appears only on active
-   tabs, primary buttons, links, focus states, badges, and icons.
+   Yaksha FAQ theme palette held entirely in CSS variables. Change a
+   value in :root or [data-theme="dark"] and the entire site
+   re-skins — every Tailwind class (bg-accent, text-ink, border-
+   border, bg-bg/82, text-ink/70, etc.) resolves through these
+   tokens via the aliases in tailwind.config.js.
 
-   Light  : bg #F7F4EF → surface #FFFFFF → card #FCFAF8 → accent #D6B78F
-   Dark   : bg #131313 → surface #191919 → card #202020 → accent #E4CFB3
+   Brand codes — Light:
+     #FBEDE0  Soft Cream    — bg
+     #B88566  Warm Brown     — primary accent
+     #7E9C72  Sage Green     — success
+     #D89B52  Amber          — warning
+     #E48368  Coral          — danger
+     #8D9DB6  Slate Blue     — info
 
-   RGB triples (--bg-primary-rgb etc.) are kept so Tailwind
-   bg-bg/82, text-ink/70 opacity modifiers still work.
+   Brand codes — Dark:
+     #1C1B1A  Charcoal       — bg
+     #E48368  Coral          — primary accent
+     #8CA67D  Sage Green     — success
+     #D9A25B  Amber          — warning
+     #E48368  Coral          — danger (same as accent in dark)
+     #7F95AE  Steel Blue     — info
+
+   RGB triples are kept so Tailwind /<alpha-value> modifiers
+   (bg-bg/82, text-ink/70) still work.
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  /* Core neutrals (RGB triples — supports bg-bg/82, text-ink/70 etc.) */
-  --bg-primary-rgb: 247 244 239;      /* #F7F4EF — warm ivory base */
-  --bg-secondary-rgb: 255 255 255;    /* #FFFFFF — surface */
-  --bg-card-rgb: 252 250 248;         /* #FCFAF8 — card */
-  --bg-card-hover-rgb: 249 246 240;   /* slight lift on hover */
+  /* ── Backgrounds (RGB triples) ──────────────────────────────── */
+  --bg-primary-rgb: 251 237 224;      /* #FBEDE0 — Page bg (brand) */
+  --bg-secondary-rgb: 248 241 232;    /* #F8F1E8 — Surface (brand) */
+  --bg-card-rgb: 255 248 241;         /* #FFF8F1 — Card (brand) */
+  --bg-card-hover-rgb: 245 231 216;   /* #F5E7D8 — Hover (brand) */
 
-  --text-primary-rgb: 34 34 34;       /* #222222 */
-  --text-secondary-rgb: 85 85 85;     /* #555555 */
-  --text-muted-rgb: 139 139 139;      /* #8B8B8B */
+  /* ── Text ────────────────────────────────────────────────────── */
+  --text-primary-rgb: 60 42 30;       /* #3C2A1E — Primary text (brand) */
+  --text-secondary-rgb: 106 84 69;    /* #6A5445 — Secondary text (brand) */
+  --text-muted-rgb: 172 159 124;      /* #AC9F7C — Placeholders/metadata (brand) */
 
-  --accent-rgb: 214 183 143;          /* #D6B78F — warm sand accent */
-  --accent-hover-rgb: 201 167 119;    /* #C9A777 — hover / active */
-  --accent-text-rgb: 255 255 255;     /* white text on accent fill */
+  /* ── Accent ──────────────────────────────────────────────────── */
+  --accent-rgb: 184 133 102;          /* #B88566 — Primary accent (brand) */
+  --accent-hover-rgb: 166 115 86;     /* #A67356 — Hover (brand) */
+  --accent-text-rgb: 251 237 224;     /* #FBEDE0 — Text on accent buttons (brand) */
 
-  --border-rgb: 228 221 211;          /* #E4DDD3 — soft warm border */
-  --border-subtle-rgb: 237 232 224;   /* a touch lighter */
-  --border-medium-rgb: 207 197 183;   /* a touch deeper */
+  /* ── Borders ─────────────────────────────────────────────────── */
+  --border-rgb: 196 152 130;          /* #C49882 — Border (brand) */
+  --border-subtle-rgb: 232 215 202;    /* #E8D7CA — Border soft (brand) */
+  --border-medium-rgb: 175 130 108;
 
-  --icon-default-rgb: 139 139 139;
-  --icon-active-rgb: 214 183 143;
+  --icon-default-rgb: 140 125 112;
+  --icon-active-rgb: 184 133 102;
 
-  --success-rgb: 214 183 143;         /* accent doubles as success */
-  --warning-rgb: 176 132 40;          /* muted amber, not neon */
-  --danger-rgb: 196 70 70;            /* muted brick red */
+  /* ── Status (Light) ──────────────────────────────────────────── */
+  --success-rgb: 126 156 114;         /* #7E9C72 — Sage Green (brand) */
+  --warning-rgb: 216 155 82;          /* #D89B52 — Amber (brand) */
+  --danger-rgb: 228 131 104;          /* #E48368 — Coral (brand) */
+  --info-rgb: 141 157 182;            /* #8D9DB6 — Slate Blue (brand) */
 
-  --nav-bg-rgb: 247 244 239;
-  --nav-text-rgb: 85 85 85;
-  --nav-active-rgb: 34 34 34;
-  --nav-border-rgb: 228 221 211;
+  --nav-bg-rgb: 251 237 224;
+  --nav-text-rgb: 106 84 69;
+  --nav-active-rgb: 60 42 30;
+  --nav-border-rgb: 196 152 130;
 
-  --section-title-rgb: 34 34 34;
+  --section-title-rgb: 60 42 30;
 
-  /* Pre-tinted semantic colors (full rgba — no /<alpha-value>) */
-  --tag-high-bg: rgba(214, 183, 143, 0.14);    /* accent-soft */
-  --tag-high-text: #9C7E55;                    /* deep tan for text on tint */
-  --tag-medium-bg: rgba(176, 132, 40, 0.12);
+  /* ── Pre-tinted semantic colors (full rgba — no /<alpha-value>) ── */
+  --tag-high-bg: rgba(184, 133, 102, 0.14);      /* accent-soft */
+  --tag-high-text: #6B4A30;
+  --tag-medium-bg: rgba(216, 155, 82, 0.14);     /* warning-soft */
   --tag-medium-text: #8A6914;
-  --badge-solved-bg: rgba(214, 183, 143, 0.14);
-  --badge-solved-text: #9C7E55;
-  --badge-open-bg: rgba(228, 221, 211, 0.6);
-  --badge-open-text: #555555;
-  --danger-bg: rgba(196, 70, 70, 0.08);
+  --badge-solved-bg: rgba(126, 156, 114, 0.18); /* success-soft */
+  --badge-solved-text: #4F6B47;
+  --badge-open-bg: rgba(232, 215, 202, 0.5);
+  --badge-open-text: #6B4A30;
+  --success-bg: rgba(126, 156, 114, 0.14);
+  --warning-bg: rgba(216, 155, 82, 0.14);
+  --info-bg: rgba(141, 157, 182, 0.14);
+  --danger-bg: rgba(228, 131, 104, 0.10);
 
-  --pill-bg: #FCFAF8;
-  --pill-border: #E4DDD3;
-  --pill-text: #555555;
-  --pill-active-bg: #D6B78F;               /* solid sand fill — accent on active */
-  --pill-active-border: #C9A777;
-  --pill-active-text: #FFFFFF;
-  --pill-active-text-on-bg: #FFFFFF;        /* kept for legacy compat */
-  --pill-active-indicator: #D6B78F;
+  --pill-bg: #FFF8F1;                  /* matches Card */
+  --pill-border: #E8D7CA;              /* matches Border soft */
+  --pill-text: #6B4A30;
+  --pill-active-bg: #B88566;            /* solid warm brown — accent on active */
+  --pill-active-border: #A67356;
+  --pill-active-text: #FBEDE0;
+  --pill-active-text-on-bg: #FBEDE0;
+  --pill-active-indicator: #B88566;
 
-  --input-bg: #ffffff;
-  --input-border: #E4DDD3;
-  --input-placeholder: #8B8B8B;
-  --input-focus-border: rgba(214, 183, 143, 0.55);
+  --input-bg: #FFF8F1;                 /* matches Card */
+  --input-border: #E8D7CA;
+  --input-placeholder: #AC9F7C;
+  --input-focus-border: rgba(184, 133, 102, 0.55);
 
-  --nav-active-indicator: #D6B78F;
-  --section-icon: #D6B78F;
-  --deco-stroke: rgba(214, 183, 143, 0.60);
-  --deco-stroke-soft: #C9BFAC;
+  --nav-active-indicator: #B88566;
+  --section-icon: #B88566;
+  --deco-stroke: rgba(184, 133, 102, 0.60);
+  --deco-stroke-soft: #E8D7CA;
 
-  --modal-bg: #ffffff;
-  --modal-border: #E4DDD3;
-  --dropdown-bg: #ffffff;
-  --dropdown-border: #E4DDD3;
-  --dropdown-hover: #FCFAF8;
-  --overlay-bg: rgba(34, 34, 34, 0.4);
+  --modal-bg: #FFFFFF;                 /* modal uses pure white for max lift above cream */
+  --modal-border: #E8D7CA;
+  --dropdown-bg: #FFF8F1;
+  --dropdown-border: #E8D7CA;
+  --dropdown-hover: #F5E7D8;           /* matches Hover */
+  --overlay-bg: rgba(60, 42, 30, 0.4);
 
-  --scrollbar-thumb: #CFC7B8;
+  --scrollbar-thumb: #C49882;
   --scrollbar-track: transparent;
 
-  /* Theme-toggle specific (light defaults) */
-  --toggle-pill-bg: rgba(214, 183, 143, 0.14);
-  --toggle-pill-border: rgba(214, 183, 143, 0.30);
-  --toggle-knob-bg: #ffffff;
-  --toggle-icon-color: #9C7E55;
+  /* ── Theme-toggle (light defaults) ─────────────────────────────── */
+  --toggle-pill-bg: rgba(184, 133, 102, 0.14);
+  --toggle-pill-border: rgba(184, 133, 102, 0.30);
+  --toggle-knob-bg: #FFF8F1;
+  --toggle-icon-color: #B88566;
   --toggle-knob-x: 3px;
   --toggle-sun-opacity: 1;
   --toggle-sun-transform: rotate(0deg) scale(1);
   --toggle-moon-opacity: 0;
   --toggle-moon-transform: rotate(90deg) scale(0.5);
 
-  /* Shadows (light) — warm, soft, layered (rgba of #222222) */
-  --shadow-card: 0 4px 12px rgba(34, 34, 34, 0.04), 0 12px 32px rgba(34, 34, 34, 0.05);
-  --shadow-card-hover: 0 8px 20px rgba(34, 34, 34, 0.06), 0 20px 44px rgba(34, 34, 34, 0.08);
-  --shadow-float: 0 12px 32px rgba(34, 34, 34, 0.10);
-  --shadow-glow: 0 0 0 4px rgba(214, 183, 143, 0.14), 0 8px 32px rgba(34, 34, 34, 0.06);
-  --shadow-subtle: 0 2px 12px rgba(34, 34, 34, 0.04);
+  /* ── Shadows (light) — warm, soft, layered ─────────────────────── */
+  --shadow-card: 0 4px 12px rgba(60, 42, 30, 0.04), 0 12px 32px rgba(60, 42, 30, 0.05);
+  --shadow-card-hover: 0 8px 20px rgba(60, 42, 30, 0.06), 0 20px 44px rgba(60, 42, 30, 0.08);
+  --shadow-float: 0 12px 32px rgba(60, 42, 30, 0.10);
+  --shadow-glow: 0 0 0 4px rgba(184, 133, 102, 0.14), 0 8px 32px rgba(60, 42, 30, 0.06);
+  --shadow-subtle: 0 2px 12px rgba(60, 42, 30, 0.04);
 
-  /* Body background — barely-there warm wash at the top (editorial calm) */
+  /* ── Body background — barely-there warm wash at the top ───────── */
   --body-bg-image:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(214, 183, 143, 0.06) 0%, transparent 60%);
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(184, 133, 102, 0.06) 0%, transparent 60%);
 
-  /* ── ShadCN tokens ────────────────────────────────────────────
-     Aliased to the Yaksha portfolio palette so ShadCN components
-     render in-house by default. */
+  /* ── ShadCN tokens (aliased to the brand palette) ──────────────── */
   --background: var(--bg-primary-rgb);
   --foreground: var(--text-primary-rgb);
   --card: var(--bg-card-rgb);
@@ -129,19 +149,19 @@
   --accent: var(--bg-secondary-rgb);
   --accent-foreground: var(--text-primary-rgb);
   --destructive: var(--danger-rgb);
-  --destructive-foreground: 255 255 255;
+  --destructive-foreground: 251 237 224;
   --border: var(--border-rgb);
   --input: var(--border-rgb);
   --ring: var(--accent-rgb);
 
-  /* Chart palette (ShadCN charts) — monochromatic sand ramp */
+  /* ── Chart palette — warm monochromatic ramp ──────────────────── */
   --chart-1: var(--accent-rgb);
-  --chart-2: 188 162 128;
-  --chart-3: 176 132 40;
-  --chart-4: 196 70 70;
-  --chart-5: 139 139 139;
+  --chart-2: 166 115 86;       /* accent-hover */
+  --chart-3: 172 159 124;      /* muted */
+  --chart-4: 60 42 30;          /* text-primary */
+  --chart-5: 196 152 130;      /* border */
 
-  /* Sidebar (ShadCN sidebar blocks) */
+  /* ── Sidebar (ShadCN sidebar blocks) ──────────────────────────── */
   --sidebar: var(--bg-card-rgb);
   --sidebar-foreground: var(--text-primary-rgb);
   --sidebar-primary: var(--accent-rgb);
@@ -157,102 +177,126 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DARK MODE — Yaksha portfolio palette (monochrome + warm sand accent)
+   DARK MODE — warm charcoal palette
+
+   Anchors (brand):
+     #1C1B1A  Background  — page bg (charcoal)
+     #252321  Surface     — modals / dropdowns / inputs
+     #2E2B28  Card        — elevated cards
+     #393531  Hover       — hover state
+     #3D3935  Border      — crisp gray dividers
+     #4A4642  Border soft — soft borders
+     #F7F2EC  Text        — warm off-white body text
+     #D1C6BC  Text Sec    — secondary text
+     #9E9488  Muted Text  — placeholders / disabled
+     #E48368  Accent      — coral primary accent
+     #F09980  Accent Hov  — brighter coral on hover
+     #4A3530  Accent soft — selected bg (coral-tinted dark)
+     #8CA67D  Success     — sage green (dark variant)
+     #D9A25B  Warning     — amber (dark variant)
+     #7F95AE  Info        — steel blue (dark variant)
+
+   Light mode is unaffected by this block.
    ═══════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
-  --bg-primary-rgb: 19 19 19;         /* #131313 — base */
-  --bg-secondary-rgb: 25 25 25;       /* #191919 — surface */
-  --bg-card-rgb: 32 32 32;            /* #202020 — card */
-  --bg-card-hover-rgb: 38 38 38;      /* slight lift on hover */
+  --bg-primary-rgb: 28 27 26;          /* #1C1B1A — Background (brand) */
+  --bg-secondary-rgb: 37 35 33;       /* #252321 — Surface (brand) */
+  --bg-card-rgb: 46 43 40;            /* #2E2B28 — Card (brand) */
+  --bg-card-hover-rgb: 57 53 49;      /* #393531 — Hover (brand) */
 
-  --text-primary-rgb: 242 242 242;    /* #F2F2F2 */
-  --text-secondary-rgb: 184 184 184;  /* #B8B8B8 */
-  --text-muted-rgb: 122 122 122;      /* #7A7A7A */
+  --text-primary-rgb: 247 242 236;    /* #F7F2EC — Text (brand) */
+  --text-secondary-rgb: 209 198 188;  /* #D1C6BC — Secondary text (brand) */
+  --text-muted-rgb: 158 148 136;      /* #9E9488 — Muted Text (brand) */
 
-  --accent-rgb: 228 207 179;          /* #E4CFB3 — warm sand accent */
-  --accent-hover-rgb: 239 220 195;    /* #EFDCC3 — hover / active */
-  --accent-text-rgb: 19 19 19;        /* dark text on sand button */
+  --accent-rgb: 228 131 104;          /* #E48368 — Accent (brand) */
+  --accent-hover-rgb: 240 153 128;    /* #F09980 — Hover (brand) */
+  --accent-text-rgb: 28 27 26;        /* #1C1B1A — Text on accent (brand) */
 
-  --border-rgb: 42 42 42;             /* #2A2A2A — soft low-contrast border */
-  --border-subtle-rgb: 36 36 36;
-  --border-medium-rgb: 58 58 58;
+  --border-rgb: 61 57 53;             /* #3D3935 — Border (brand) */
+  --border-subtle-rgb: 74 70 66;      /* #4A4642 — Border soft (brand) */
+  --border-medium-rgb: 92 86 80;
 
-  --icon-default-rgb: 122 122 122;
-  --icon-active-rgb: 228 207 179;
+  --icon-default-rgb: 158 148 136;
+  --icon-active-rgb: 228 131 104;
 
-  --success-rgb: 228 207 179;         /* accent doubles as success */
-  --warning-rgb: 200 158 90;          /* muted amber */
-  --danger-rgb: 196 90 90;            /* muted brick red */
+  /* Status (Dark) */
+  --success-rgb: 140 166 125;         /* #8CA67D — Success (brand) */
+  --warning-rgb: 217 162 91;          /* #D9A25B — Warning (brand) */
+  --danger-rgb: 228 131 104;          /* #E48368 — Danger (brand) */
+  --info-rgb: 127 149 174;            /* #7F95AE — Info (brand) */
 
-  --nav-bg-rgb: 19 19 19;
-  --nav-text-rgb: 184 184 184;
-  --nav-active-rgb: 242 242 242;
-  --nav-border-rgb: 42 42 42;
+  --nav-bg-rgb: 28 27 26;
+  --nav-text-rgb: 209 198 188;
+  --nav-active-rgb: 247 242 236;
+  --nav-border-rgb: 61 57 53;
 
-  --section-title-rgb: 242 242 242;
+  --section-title-rgb: 247 242 236;
 
   /* Pre-tinted semantic colors (full rgba — no /<alpha-value>) */
-  --tag-high-bg: rgba(228, 207, 179, 0.14);    /* accent-soft */
-  --tag-high-text: #E4CFB3;
-  --tag-medium-bg: rgba(200, 158, 90, 0.16);
-  --tag-medium-text: #d4a558;
-  --badge-solved-bg: rgba(228, 207, 179, 0.14);
-  --badge-solved-text: #E4CFB3;
-  --badge-open-bg: rgba(255, 255, 255, 0.05);
-  --badge-open-text: #B8B8B8;
-  --danger-bg: rgba(196, 90, 90, 0.14);
+  --tag-high-bg: rgba(228, 131, 104, 0.16);     /* accent-soft (coral) */
+  --tag-high-text: #E48368;
+  --tag-medium-bg: rgba(217, 162, 91, 0.16);    /* warning-soft */
+  --tag-medium-text: #D9A25B;
+  --badge-solved-bg: rgba(140, 166, 125, 0.18); /* success-soft */
+  --badge-solved-text: #8CA67D;
+  --badge-open-bg: rgba(255, 255, 255, 0.06);
+  --badge-open-text: #9E9488;
+  --success-bg: rgba(140, 166, 125, 0.14);
+  --warning-bg: rgba(217, 162, 91, 0.14);
+  --info-bg: rgba(127, 149, 174, 0.14);
+  --danger-bg: rgba(228, 131, 104, 0.14);
 
-  --pill-bg: rgba(255, 255, 255, 0.04);
-  --pill-border: rgba(255, 255, 255, 0.08);
-  --pill-text: #B8B8B8;
-  --pill-active-bg: #E4CFB3;                /* solid sand fill — accent on active */
-  --pill-active-border: #EFDCC3;
-  --pill-active-text: #131313;
-  --pill-active-text-on-bg: #131313;
-  --pill-active-indicator: #E4CFB3;
+  --pill-bg: rgba(255, 255, 255, 0.05);
+  --pill-border: rgba(255, 255, 255, 0.10);
+  --pill-text: #9E9488;
+  --pill-active-bg: #E48368;                /* solid coral — accent on active */
+  --pill-active-border: #F09980;
+  --pill-active-text: #1C1B1A;
+  --pill-active-text-on-bg: #1C1B1A;
+  --pill-active-indicator: #E48368;
 
-  --input-bg: #191919;
-  --input-border: rgba(255, 255, 255, 0.08);
-  --input-placeholder: #7A7A7A;
-  --input-focus-border: rgba(228, 207, 179, 0.45);
+  --input-bg: #252321;                   /* matches Surface */
+  --input-border: rgba(255, 255, 255, 0.10);
+  --input-placeholder: #9E9488;
+  --input-focus-border: rgba(228, 131, 104, 0.50);
 
-  --nav-active-indicator: #E4CFB3;
-  --section-icon: #E4CFB3;
-  --deco-stroke: rgba(228, 207, 179, 0.35);
-  --deco-stroke-soft: rgba(228, 207, 179, 0.18);
+  --nav-active-indicator: #E48368;
+  --section-icon: #E48368;
+  --deco-stroke: rgba(228, 131, 104, 0.40);
+  --deco-stroke-soft: rgba(228, 131, 104, 0.20);
 
-  --modal-bg: #191919;
-  --modal-border: rgba(255, 255, 255, 0.08);
-  --dropdown-bg: #191919;
-  --dropdown-border: rgba(255, 255, 255, 0.08);
-  --dropdown-hover: rgba(255, 255, 255, 0.04);
+  --modal-bg: #252321;
+  --modal-border: rgba(255, 255, 255, 0.10);
+  --dropdown-bg: #252321;
+  --dropdown-border: rgba(255, 255, 255, 0.10);
+  --dropdown-hover: rgba(255, 255, 255, 0.05);
   --overlay-bg: rgba(0, 0, 0, 0.70);
 
-  --scrollbar-thumb: rgba(255, 255, 255, 0.08);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.10);
   --scrollbar-track: transparent;
 
   /* Toggle (dark) */
-  --toggle-pill-bg: rgba(228, 207, 179, 0.14);
-  --toggle-pill-border: rgba(228, 207, 179, 0.30);
-  --toggle-knob-bg: #E4CFB3;
-  --toggle-icon-color: #131313;
+  --toggle-pill-bg: rgba(228, 131, 104, 0.14);
+  --toggle-pill-border: rgba(228, 131, 104, 0.30);
+  --toggle-knob-bg: #E48368;
+  --toggle-icon-color: #1C1B1A;
   --toggle-knob-x: 27px;
   --toggle-sun-opacity: 0;
   --toggle-sun-transform: rotate(-90deg) scale(0.5);
   --toggle-moon-opacity: 1;
   --toggle-moon-transform: rotate(0deg) scale(1);
 
-  /* Shadows (dark) — soft, diffused, with optional sand glow on hover */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.5),
-                        0 0 0 1px rgba(228, 207, 179, 0.14);
-  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 0 3px rgba(228, 207, 179, 0.20);
+  /* Shadows (dark) — soft, diffused, with subtle coral glow on hover */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.55),
+                        0 0 0 1px rgba(228, 131, 104, 0.18);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 0 3px rgba(228, 131, 104, 0.22);
 
-  /* Body — subtle radial gradient with faint sand tint */
+  /* Body — subtle radial gradient with faint coral tint on dark */
   --body-bg-image:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(228, 207, 179, 0.05) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(228, 207, 179, 0.03) 0%, transparent 60%);
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(228, 131, 104, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(228, 131, 104, 0.03) 0%, transparent 60%);
 
   /* ShadCN tokens (dark) — same aliases, dark values inherited from
      the overridden palette above. Component renders adapt automatically. */
@@ -271,16 +315,16 @@
   --accent: var(--bg-secondary-rgb);
   --accent-foreground: var(--text-primary-rgb);
   --destructive: var(--danger-rgb);
-  --destructive-foreground: 19 19 19;
+  --destructive-foreground: 28 27 26;
   --border: var(--border-rgb);
   --input: var(--border-rgb);
   --ring: var(--accent-rgb);
 
   --chart-1: var(--accent-rgb);
-  --chart-2: 200 180 150;
-  --chart-3: 200 158 90;
-  --chart-4: 196 90 90;
-  --chart-5: 184 184 184;
+  --chart-2: 240 153 128;     /* accent-hover */
+  --chart-3: 217 162 91;      /* warning */
+  --chart-4: 220 80 70;        /* danger deeper */
+  --chart-5: 209 198 188;     /* text-secondary */
 
   --sidebar: var(--bg-card-rgb);
   --sidebar-foreground: var(--text-primary-rgb);
@@ -422,7 +466,7 @@ select option {
      Light: soft sand halo. Dark: matches accent ring. */
   .search-glow:focus-within {
     border-color: var(--input-focus-border);
-    box-shadow: 0 0 0 4px rgba(214, 183, 143, 0.14);
+    box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / 0.14);
   }
   [data-theme="dark"] .search-glow:focus-within {
     box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.20);
@@ -452,104 +496,95 @@ select option {
   }
 
   /* Primary Button (Get Started / Ask Question)
-     Light: warm sand accent with a soft premium gradient. */
+     Built from accent tokens — change --accent-rgb / --accent-hover-rgb
+     in :root and the button re-skins automatically. Gradient stops
+     are derived from the accent via per-theme rgb triples. */
   .btn-primary {
-    background-color: #D6B78F;
-    background-image: linear-gradient(180deg, #DFC4A0 0%, #D6B78F 100%);
-    color: #ffffff;
-    box-shadow: 0 1px 2px rgba(156, 126, 85, 0.20), 0 4px 12px rgba(34, 34, 34, 0.06);
+    background-color: rgb(var(--accent-rgb));
+    background-image: linear-gradient(180deg, rgb(var(--accent-hover-rgb)) 0%, rgb(var(--accent-rgb)) 100%);
+    color: rgb(var(--accent-text-rgb));
+    box-shadow: 0 1px 2px rgb(var(--accent-rgb) / 0.30), 0 4px 12px rgb(var(--text-primary-rgb) / 0.06);
     border: none;
   }
   .btn-primary:hover {
-    background-color: #C9A777;
-    background-image: linear-gradient(180deg, #D2B388 0%, #C9A777 100%);
+    background-color: rgb(var(--accent-hover-rgb));
+    background-image: linear-gradient(180deg, rgb(var(--accent-text-rgb)) 0%, rgb(var(--accent-hover-rgb)) 100%);
     transform: none;
-    box-shadow: 0 2px 4px rgba(156, 126, 85, 0.22), 0 6px 16px rgba(34, 34, 34, 0.08);
+    box-shadow: 0 2px 4px rgb(var(--accent-rgb) / 0.35), 0 6px 16px rgb(var(--text-primary-rgb) / 0.08);
   }
   .btn-primary:active {
-    background-color: #B89564;
-    background-image: linear-gradient(180deg, #C9A777 0%, #B89564 100%);
+    background-color: rgb(var(--accent-hover-rgb));
+    background-image: linear-gradient(180deg, rgb(var(--accent-hover-rgb)) 0%, rgb(var(--accent-rgb)) 100%);
     transform: none;
   }
 
   [data-theme="dark"] .btn-primary {
-    background-color: #E4CFB3;            /* warm sand on dark */
-    color: #131313;
     background-image: none;
     box-shadow: none;
   }
   [data-theme="dark"] .btn-primary:hover {
-    background-color: #EFDCC3;            /* accent-hover */
     box-shadow: none;
   }
-  [data-theme="dark"] .btn-primary:active {
-    background-color: #D8C2A0;
-  }
 
-  /* Secondary Button (Search input)
-     Light: warm sand — calm, premium, not loud. */
+  /* Secondary Button (Search input) */
   .btn-secondary {
-    background-color: #D6B78F;
-    background-image: linear-gradient(180deg, #DFC4A0 0%, #D6B78F 100%);
-    color: #ffffff;
-    box-shadow: 0 1px 2px rgba(156, 126, 85, 0.20), 0 4px 12px rgba(34, 34, 34, 0.06);
+    background-color: rgb(var(--accent-rgb));
+    background-image: linear-gradient(180deg, rgb(var(--accent-hover-rgb)) 0%, rgb(var(--accent-rgb)) 100%);
+    color: rgb(var(--accent-text-rgb));
+    box-shadow: 0 1px 2px rgb(var(--accent-rgb) / 0.30), 0 4px 12px rgb(var(--text-primary-rgb) / 0.06);
     border: none;
   }
   .btn-secondary:hover {
-    background-color: #C9A777;
-    background-image: linear-gradient(180deg, #D2B388 0%, #C9A777 100%);
-    box-shadow: 0 2px 4px rgba(156, 126, 85, 0.22), 0 6px 16px rgba(34, 34, 34, 0.08);
+    background-color: rgb(var(--accent-hover-rgb));
+    background-image: linear-gradient(180deg, rgb(var(--accent-text-rgb)) 0%, rgb(var(--accent-hover-rgb)) 100%);
+    box-shadow: 0 2px 4px rgb(var(--accent-rgb) / 0.35), 0 6px 16px rgb(var(--text-primary-rgb) / 0.08);
   }
   [data-theme="dark"] .btn-secondary {
     background-image: none;
-    background-color: rgb(var(--accent-rgb));
-    color: rgb(var(--accent-text-rgb));
-    box-shadow: none;
   }
   [data-theme="dark"] .btn-secondary:hover {
-    background-color: rgb(var(--accent-hover-rgb));
     box-shadow: none;
   }
 
   /* Ghost Button (Ask in Community) */
   .btn-ghost {
     background-color: transparent;
-    border: 1px solid #E4DDD3;
-    color: #9C7E55;
+    border: 1px solid var(--border-rgb);
+    color: rgb(var(--accent-rgb));
     box-shadow: none;
   }
   .btn-ghost:hover {
-    background-color: rgba(214, 183, 143, 0.14);
-    border-color: rgba(214, 183, 143, 0.30);
-    color: #9C7E55;
+    background-color: rgb(var(--accent-rgb) / 0.14);
+    border-color: rgb(var(--accent-rgb) / 0.30);
+    color: rgb(var(--accent-rgb));
   }
   [data-theme="dark"] .btn-ghost {
     background-color: transparent;
     border: 1px solid rgba(255, 255, 255, 0.10);
-    color: #B8B8B8;
+    color: var(--text-secondary-rgb);
   }
   [data-theme="dark"] .btn-ghost:hover {
     background-color: rgba(255, 255, 255, 0.05);
-    color: #E4CFB3;
+    color: rgb(var(--accent-rgb));
   }
 
-  /* Focus glow ring — soft sand halo on focused interactive surfaces */
+  /* Focus glow ring — soft accent halo on focused interactive surfaces */
   .focus-glow:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.35);
   }
 
-  /* Active category chip — soft sand tint (calm, editorial) in both themes. */
+  /* Active category chip — soft accent tint, palette-coherent. */
   .faq-chip-active {
-    background-color: rgba(214, 183, 143, 0.14);
-    color: #9C7E55;
-    border-color: rgba(214, 183, 143, 0.30);
-    box-shadow: 0 4px 12px rgba(34, 34, 34, 0.05);
+    background-color: rgb(var(--accent-rgb) / 0.14);
+    color: rgb(var(--accent-rgb));
+    border-color: rgb(var(--accent-rgb) / 0.30);
+    box-shadow: 0 4px 12px rgb(var(--text-primary-rgb) / 0.05);
   }
   [data-theme="dark"] .faq-chip-active {
-    background-color: rgba(228, 207, 179, 0.14);
-    color: #E4CFB3;
-    border-color: rgba(228, 207, 179, 0.35);
+    background-color: rgb(var(--accent-rgb) / 0.14);
+    color: rgb(var(--accent-rgb));
+    border-color: rgb(var(--accent-rgb) / 0.35);
     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
   }
 
@@ -597,13 +632,13 @@ select option {
   }
   [data-theme="dark"] .btn-cta:hover {
     background-color: #202020;
-    border-color: rgba(228, 207, 179, 0.40);
-    color: #E4CFB3;
-    box-shadow: 0 0 20px rgba(228, 207, 179, 0.15);
+    border-color: rgb(var(--accent-rgb) / 0.40);
+    color: rgb(var(--accent-rgb));
+    box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.15);
     opacity: 1;
   }
   [data-theme="dark"] .btn-cta:hover .btn-cta-icon {
-    color: #E4CFB3;
+    color: rgb(var(--accent-rgb));
     transform: translateX(2px);
   }
   [data-theme="dark"] .btn-cta:active {
@@ -662,10 +697,10 @@ select option {
     color: #F2F2F2;
   }
   [data-theme="dark"] .toggle-segment.active {
-    background-color: rgba(228, 207, 179, 0.12);
-    border-color: rgba(228, 207, 179, 0.35);
-    color: #E4CFB3;
-    box-shadow: 0 0 20px rgba(228, 207, 179, 0.15);
+    background-color: rgb(var(--accent-rgb) / 0.12);
+    border-color: rgb(var(--accent-rgb) / 0.35);
+    color: rgb(var(--accent-rgb));
+    box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.15);
   }
 
   /* ═════════════════════════════════════════════════════════════
@@ -689,39 +724,39 @@ select option {
                 box-shadow 0.2s ease,
                 transform 0.15s ease;
     cursor: pointer;
-    background-color: rgba(214, 183, 143, 0.14);
-    border: 1px solid rgba(214, 183, 143, 0.30);
-    color: #9C7E55;
+    background-color: rgb(var(--accent-rgb) / 0.14);
+    border: 1px solid rgb(var(--accent-rgb) / 0.30);
+    color: rgb(var(--accent-rgb));
   }
   .btn-community-ask:hover {
-    background-color: rgba(214, 183, 143, 0.18);
-    border-color: rgba(214, 183, 143, 0.40);
-    color: #9C7E55;
-    box-shadow: 0 4px 12px rgba(214, 183, 143, 0.15);
+    background-color: rgb(var(--accent-rgb) / 0.18);
+    border-color: rgb(var(--accent-rgb) / 0.40);
+    color: rgb(var(--accent-rgb));
+    box-shadow: 0 4px 12px rgb(var(--accent-rgb) / 0.15);
     transform: translateY(-2px);
   }
   .btn-community-ask:active {
-    background-color: rgba(214, 183, 143, 0.14);
+    background-color: rgb(var(--accent-rgb) / 0.14);
     transform: translateY(0);
   }
   [data-theme="dark"] .btn-community-ask {
-    background-color: rgba(228, 207, 179, 0.10);
+    background-color: rgb(var(--accent-rgb) / 0.10);
     border-width: 1px;
     border-style: solid;
-    border-color: rgba(228, 207, 179, 0.25);
-    color: #E4CFB3;
+    border-color: rgb(var(--accent-rgb) / 0.25);
+    color: rgb(var(--accent-rgb));
   }
   [data-theme="dark"] .btn-community-ask:hover {
-    background-color: rgba(228, 207, 179, 0.15);
-    border-color: rgba(228, 207, 179, 0.40);
-    color: #EFDCC3;
-    box-shadow: 0 0 20px rgba(228, 207, 179, 0.15);
+    background-color: rgb(var(--accent-rgb) / 0.15);
+    border-color: rgb(var(--accent-rgb) / 0.40);
+    color: rgb(var(--accent-hover-rgb));
+    box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.15);
     transform: translateY(-2px);
   }
   [data-theme="dark"] .btn-community-ask:active {
-    background-color: rgba(228, 207, 179, 0.12);
+    background-color: rgb(var(--accent-rgb) / 0.12);
     transform: translateY(0);
-    box-shadow: 0 0 8px rgba(228, 207, 179, 0.10);
+    box-shadow: 0 0 8px rgb(var(--accent-rgb) / 0.10);
   }
 
   /* ═════════════════════════════════════════════════════════════
@@ -742,7 +777,7 @@ select option {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     background-color: rgba(0, 0, 0, 0.5);
-    box-shadow: inset 0 0 80px rgba(228, 207, 179, 0.04);
+    box-shadow: inset 0 0 80px rgb(var(--accent-rgb) / 0.04);
   }
 
   /* ═════════════════════════════════════════════════════════════
@@ -757,7 +792,7 @@ select option {
     border: 1px solid #E4DDD3;
     border-radius: 16px;
     box-shadow: 0 20px 50px rgba(34, 34, 34, 0.14);
-    background-image: linear-gradient(135deg, rgba(214, 183, 143, 0.06), rgba(255, 255, 255, 0.6));
+    background-image: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.06), rgba(255, 255, 255, 0.6));
   }
   [data-theme="dark"] .search-panel {
     background-color: rgba(25, 25, 25, 0.6);
@@ -766,7 +801,7 @@ select option {
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-    background-image: linear-gradient(135deg, rgba(228, 207, 179, 0.06), rgba(0, 0, 0, 0.2));
+    background-image: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.06), rgba(0, 0, 0, 0.2));
   }
 
   /* ═════════════════════════════════════════════════════════════
@@ -783,8 +818,8 @@ select option {
     color: #8B8B8B;
   }
   .search-bar-input:focus {
-    border-color: rgba(214, 183, 143, 0.55);
-    box-shadow: 0 0 0 4px rgba(214, 183, 143, 0.14);
+    border-color: rgb(var(--accent-rgb) / 0.55);
+    box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / 0.14);
     outline: none;
   }
   [data-theme="dark"] .search-bar-input {
@@ -796,8 +831,8 @@ select option {
     color: #7A7A7A;
   }
   [data-theme="dark"] .search-bar-input:focus {
-    border-color: rgba(228, 207, 179, 0.45);
-    box-shadow: 0 0 20px rgba(228, 207, 179, 0.15);
+    border-color: rgb(var(--accent-rgb) / 0.45);
+    box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.15);
   }
 
   /* ═════════════════════════════════════════════════════════════
@@ -816,8 +851,8 @@ select option {
     color: #222222;
   }
   .search-list-item.active {
-    background-color: rgba(214, 183, 143, 0.14);
-    border: 1px solid rgba(214, 183, 143, 0.30);
+    background-color: rgb(var(--accent-rgb) / 0.14);
+    border: 1px solid rgb(var(--accent-rgb) / 0.30);
     color: #222222;
   }
   [data-theme="dark"] .search-list-item {
@@ -830,8 +865,8 @@ select option {
     color: #F2F2F2;
   }
   [data-theme="dark"] .search-list-item.active {
-    background-color: rgba(228, 207, 179, 0.10);
-    border: 1px solid rgba(228, 207, 179, 0.25);
+    background-color: rgb(var(--accent-rgb) / 0.10);
+    border: 1px solid rgb(var(--accent-rgb) / 0.25);
     color: #F2F2F2;
   }
 
@@ -847,8 +882,8 @@ select option {
     transition: background-color 0.15s ease, color 0.15s ease;
   }
   .search-pill:hover {
-    background-color: rgba(214, 183, 143, 0.14);
-    color: #9C7E55;
+    background-color: rgb(var(--accent-rgb) / 0.14);
+    color: rgb(var(--accent-rgb));
   }
   [data-theme="dark"] .search-pill {
     background-color: rgba(255, 255, 255, 0.05);
@@ -884,8 +919,8 @@ select option {
     border-color: #E4DDD3;
   }
   .ask-community-container:hover {
-    background-color: rgba(214, 183, 143, 0.10);
-    border-color: rgba(214, 183, 143, 0.25);
+    background-color: rgb(var(--accent-rgb) / 0.10);
+    border-color: rgb(var(--accent-rgb) / 0.25);
   }
   .ask-community-title {
     color: #222222;
@@ -894,7 +929,7 @@ select option {
     color: #222222;
   }
   .ask-community-action {
-    color: #9C7E55;
+    color: rgb(var(--accent-rgb));
   }
 
   [data-theme="dark"] .ask-community-container {
@@ -911,7 +946,7 @@ select option {
     color: #ffffff;
   }
   [data-theme="dark"] .ask-community-action {
-    color: #E4CFB3;
+    color: rgb(var(--accent-rgb));
   }
   /* ═════════════════════════════════════════════════════════════
      .search-popular-pill — enhanced popular search capsules
@@ -938,12 +973,12 @@ select option {
                 color 0.2s ease;
   }
   .search-popular-pill:hover {
-    background-color: rgba(214, 183, 143, 0.14);
-    border-color: rgba(214, 183, 143, 0.30);
-    color: #9C7E55;
+    background-color: rgb(var(--accent-rgb) / 0.14);
+    border-color: rgb(var(--accent-rgb) / 0.30);
+    color: rgb(var(--accent-rgb));
   }
   .search-popular-pill:active {
-    background-color: rgba(214, 183, 143, 0.18);
+    background-color: rgb(var(--accent-rgb) / 0.18);
   }
   .search-popular-pill .search-popular-icon {
     opacity: 0.5;
@@ -970,12 +1005,12 @@ select option {
     color: #D1D5DB;
   }
   [data-theme="dark"] .search-popular-pill:hover {
-    background-color: rgba(228, 207, 179, 0.10);
-    border-color: rgba(228, 207, 179, 0.30);
-    color: #E4CFB3;
+    background-color: rgb(var(--accent-rgb) / 0.10);
+    border-color: rgb(var(--accent-rgb) / 0.30);
+    color: rgb(var(--accent-rgb));
   }
   [data-theme="dark"] .search-popular-pill:active {
-    background-color: rgba(228, 207, 179, 0.18);
+    background-color: rgb(var(--accent-rgb) / 0.18);
   }
   [data-theme="dark"] .search-popular-pill .search-popular-icon {
     opacity: 0.4;
@@ -1025,8 +1060,8 @@ select option {
     transform: translateY(-4px);
     box-shadow: 0 8px 20px rgba(34, 34, 34, 0.06),
                 0 24px 48px rgba(34, 34, 34, 0.08),
-                0 0 0 1px rgba(214, 183, 143, 0.14);
-    border-color: rgba(214, 183, 143, 0.35);
+                0 0 0 1px rgb(var(--accent-rgb) / 0.14);
+    border-color: rgb(var(--accent-rgb) / 0.35);
   }
   .faq-card-clay:focus-visible {
     outline: none;
@@ -1063,7 +1098,7 @@ select option {
     filter: drop-shadow(0 5px 10px rgba(34, 34, 34, 0.10))
             saturate(0.80)
             hue-rotate(var(--illu-hue, 0deg))
-            drop-shadow(0 0 8px var(--illu-glow, rgba(214, 183, 143, 0.18)));
+            drop-shadow(0 0 8px var(--illu-glow, rgb(var(--accent-rgb) / 0.18)));
     transition: opacity 0.25s ease,
                 filter 0.25s ease;
     z-index: 0;
@@ -1073,7 +1108,7 @@ select option {
     filter: drop-shadow(0 6px 12px rgba(34, 34, 34, 0.12))
             saturate(0.88)
             hue-rotate(var(--illu-hue, 0deg))
-            drop-shadow(0 0 10px var(--illu-glow, rgba(214, 183, 143, 0.22)));
+            drop-shadow(0 0 10px var(--illu-glow, rgb(var(--accent-rgb) / 0.22)));
   }
 
   /* Question count pill */
@@ -1189,7 +1224,7 @@ select option {
     background: rgba(255, 255, 255, 0.055);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(228, 207, 179, 0.25);
+    border: 1px solid rgb(var(--accent-rgb) / 0.25);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   }
   [data-theme="dark"] .faq-card-clay::before {
@@ -1197,9 +1232,9 @@ select option {
   }
   [data-theme="dark"] .faq-card-clay:hover {
     background: rgba(255, 255, 255, 0.075);
-    border-color: rgba(228, 207, 179, 0.40);
+    border-color: rgb(var(--accent-rgb) / 0.40);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45),
-                0 0 1px rgba(228, 207, 179, 0.18);
+                0 0 1px rgb(var(--accent-rgb) / 0.18);
   }
 
   /* SVG — environment-blended, consistent size.
@@ -1211,7 +1246,7 @@ select option {
             brightness(0.9)
             saturate(0.85)
             hue-rotate(var(--illu-hue, -8deg))
-            drop-shadow(0 0 9px var(--illu-glow, rgba(228, 207, 179, 0.16)));
+            drop-shadow(0 0 9px var(--illu-glow, rgb(var(--accent-rgb) / 0.16)));
   }
   [data-theme="dark"] .faq-card-clay:hover .faq-card-clay__illustration {
     opacity: 0.82;
@@ -1219,7 +1254,7 @@ select option {
             brightness(0.95)
             saturate(0.88)
             hue-rotate(var(--illu-hue, -8deg))
-            drop-shadow(0 0 12px var(--illu-glow, rgba(228, 207, 179, 0.20)));
+            drop-shadow(0 0 12px var(--illu-glow, rgb(var(--accent-rgb) / 0.20)));
   }
 
   /* Text contrast — sand-adapted tones */
@@ -1324,7 +1359,7 @@ select option {
   /* Expanded — left accent + bg shift (#5) */
   .faq-item--expanded {
     background: #f9fafb;
-    border-left-color: rgba(214, 183, 143, 0.55);
+    border-left-color: rgb(var(--accent-rgb) / 0.55);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06),
                 0 2px 6px rgba(0, 0, 0, 0.03);
     border-color: rgba(0, 0, 0, 0.07);
@@ -1445,7 +1480,7 @@ select option {
 
   /* Dark hover (#4) */
   [data-theme="dark"] .faq-item:hover {
-    background: rgba(228, 207, 179, 0.04);
+    background: rgb(var(--accent-rgb) / 0.04);
     border-color: rgba(255, 255, 255, 0.07);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   }
@@ -1453,10 +1488,10 @@ select option {
   /* Dark expanded (#5) */
   [data-theme="dark"] .faq-item--expanded {
     background: #262626;
-    border-left-color: rgba(228, 207, 179, 0.50);
+    border-left-color: rgb(var(--accent-rgb) / 0.50);
     border-color: rgba(255, 255, 255, 0.06);
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55),
-                inset 0 0 20px rgba(228, 207, 179, 0.04);
+                inset 0 0 20px rgb(var(--accent-rgb) / 0.04);
   }
   [data-theme="dark"] .faq-item--expanded:hover {
     transform: none;
@@ -1476,7 +1511,7 @@ select option {
     color: rgba(255, 255, 255, 0.40);
   }
   [data-theme="dark"] .faq-item--expanded .faq-item__chevron {
-    color: #E4CFB3;
+    color: rgb(var(--accent-rgb));
   }
 
   /* Dark answer (#9) */
@@ -2153,19 +2188,19 @@ select option {
     border-color: var(--danger-bg);
   }
   .admin-badge-admin {
-    background: rgba(214, 183, 143, 0.20);   /* sand, deepest tone — admin */
-    color: #9C7E55;
-    border-color: rgba(214, 183, 143, 0.45);
+    background: rgb(var(--accent-rgb) / 0.20);   /* sand, deepest tone — admin */
+    color: rgb(var(--accent-rgb));
+    border-color: rgb(var(--accent-rgb) / 0.45);
   }
   .admin-badge-moderator {
-    background: rgba(214, 183, 143, 0.12);   /* sand, mid tone — moderator */
-    color: #B89564;
-    border-color: rgba(214, 183, 143, 0.30);
+    background: rgb(var(--accent-rgb) / 0.12);   /* sand, mid tone — moderator */
+    color: rgb(var(--accent-hover-rgb));
+    border-color: rgb(var(--accent-rgb) / 0.30);
   }
   .admin-badge-user {
-    background: rgba(214, 183, 143, 0.08);   /* sand, lightest tone — user */
-    color: #C9A777;
-    border-color: rgba(214, 183, 143, 0.20);
+    background: rgb(var(--accent-rgb) / 0.08);   /* sand, lightest tone — user */
+    color: rgb(var(--accent-hover-rgb));
+    border-color: rgb(var(--accent-rgb) / 0.20);
   }
   .admin-badge-default {
     background: rgba(var(--border-rgb) / 0.4);
@@ -2177,9 +2212,9 @@ select option {
   :root .admin-badge-approved { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
   :root .admin-badge-pending  { background: #fffbeb; color: #92400e; border-color: #fde68a; }
   :root .admin-badge-rejected { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-  :root .admin-badge-admin    { background: rgba(214, 183, 143, 0.20); color: #6B5436; border-color: rgba(214, 183, 143, 0.45); }
-  :root .admin-badge-moderator{ background: rgba(214, 183, 143, 0.12); color: #8A6B43; border-color: rgba(214, 183, 143, 0.30); }
-  :root .admin-badge-user     { background: rgba(214, 183, 143, 0.08); color: #9C7E55; border-color: rgba(214, 183, 143, 0.20); }
+  :root .admin-badge-admin    { background: rgb(var(--accent-rgb) / 0.20); color: #6B5436; border-color: rgb(var(--accent-rgb) / 0.45); }
+  :root .admin-badge-moderator{ background: rgb(var(--accent-rgb) / 0.12); color: #8A6B43; border-color: rgb(var(--accent-rgb) / 0.30); }
+  :root .admin-badge-user     { background: rgb(var(--accent-rgb) / 0.08); color: rgb(var(--accent-rgb)); border-color: rgb(var(--accent-rgb) / 0.20); }
   :root .admin-badge-default  { background: #f9fafb; color: #374151; border-color: #e5e7eb; }
 
   /* ═══════════════════════════════════════════════════════════════
