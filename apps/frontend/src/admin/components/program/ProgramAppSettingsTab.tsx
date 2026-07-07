@@ -14,9 +14,10 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'
+import { adminInput, badgePendingReview, dangerBorder } from '../../../styles/style_config';
 import adminApi from '../../utils/adminApi';
-import { badgePendingReview, dangerBorder } from '../../../styles/style_config';
+
 
 interface ProgramAppSettings {
   goldenTicketCooldownHours: number;
@@ -112,7 +113,7 @@ function SettingRow<K extends keyof ProgramAppSettings>({
           step={SETTING_STEP[settingKey]}
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          className="w-24 px-2 py-1 rounded text-xs border bg-bg-secondary text-ink font-mono focus:outline-none admin-input"
+          className={`w-24 px-2 py-1 rounded text-xs border bg-bg-secondary text-ink font-mono focus:outline-none ${adminInput}`}
         />
       </div>
       {invalid && (

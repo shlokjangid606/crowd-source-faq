@@ -5,8 +5,11 @@ import api from '../../utils/api';
 import type { SearchResult } from '../../types/ui';
 import { useBatch } from '../../context/BatchContext';
 import {
+  btnBase,
+  btnSecondary,
   searchInputCompact,
   searchInputDefault,
+  searchPanelGlow,
   searchSuggestionItem,
 } from '../../styles/style_config';
 
@@ -195,7 +198,7 @@ const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(function Se
 
   return (
     <form data-tour="search-bar" onSubmit={handleSubmit} className={`w-full ${variant === 'default' ? 'max-w-3xl mx-auto' : ''} ${className}`}>
-      <div ref={wrapperRef} className={`relative transition-all duration-300 ${variant === 'default' ? 'search-glow rounded-[26px]' : ''}`}>
+      <div ref={wrapperRef} className={`relative transition-all duration-300 ${variant === 'default' ? `${searchPanelGlow} rounded-[26px]` : ''}`}>
         <div className={`absolute top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none ${variant === 'compact' ? 'left-3.5 w-4 h-4 group-focus-within:text-accent transition-colors' : 'left-4'}`}>
           <svg width={variant === 'compact' ? '16' : '18'} height={variant === 'compact' ? '16' : '18'} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -224,7 +227,7 @@ const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(function Se
           <button
             type="submit"
             disabled={!query.trim()}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 btn-base btn-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+            className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${btnBase} ${btnSecondary} disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <circle cx="5.5" cy="5.5" r="4"/>
@@ -249,7 +252,7 @@ const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(function Se
                   <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
                 <span className="line-clamp-1 text-ink">{s.question}</span>
-                <span className="ml-auto text-xs text-ink-faint  shrink-0">{s.category}</span>
+                <span className="ml-auto text-xs text-ink-faint shrink-0">{s.category}</span>
               </button>
             ))}
           </div>

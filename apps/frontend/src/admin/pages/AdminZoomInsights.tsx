@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
+import { adminBtnDanger, adminBtnSuccess } from '../../styles/style_config';
 import adminApi from '../utils/adminApi';
 import { timeAgo } from '../../utils/time';
 
@@ -287,14 +288,14 @@ export default function AdminZoomInsights() {
                       <button
                         onClick={() => handleAction(insight._id, 'approve')}
                         disabled={actionLoading === insight._id}
-                        className="admin-btn-success text-xs px-3 py-1.5"
+                        className={`${adminBtnSuccess} text-xs px-3 py-1.5`}
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => handleAction(insight._id, 'reject')}
                         disabled={actionLoading === insight._id}
-                        className="admin-btn-danger text-xs px-3 py-1.5"
+                        className={`${adminBtnDanger} text-xs px-3 py-1.5`}
                       >
                         Reject
                       </button>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { btnBase, btnPrimary } from '../../../styles/style_config';
 import adminApi from '../../utils/adminApi';
 
 interface Stats {
@@ -740,7 +741,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
           </div>
           <button
             onClick={handleGlobalActiveToggle}
-            className={`btn-base px-5 py-2.5 font-semibold text-xs rounded-full border transition-all duration-300 cursor-pointer ${
+            className={`${btnBase} px-5 py-2.5 font-semibold text-xs rounded-full border transition-all duration-300 cursor-pointer ${
               isGlobalActive
                 ? 'bg-danger-light text-danger border-danger/30 hover:bg-danger/15'
                 : 'bg-accent/10 text-accent border-accent/30 hover:bg-accent/20'
@@ -881,7 +882,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
                 <button
                   type="submit"
                   disabled={saving}
-                  className="btn-base btn-primary px-5 py-2 text-xs font-semibold cursor-pointer"
+                  className={`${btnBase} ${btnPrimary} px-5 py-2 text-xs font-semibold cursor-pointer`}
                 >
                   {saving ? 'Creating...' : 'Create Session'}
                 </button>
@@ -905,7 +906,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
                         {!selectedSession.isActive && (
                           <button
                             onClick={() => handleActivateSession(selectedSession._id)}
-                            className="btn-base bg-accent/10 text-accent border border-accent/30 hover:bg-accent/20 px-3.5 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer"
+                            className={`${btnBase} bg-accent/10 text-accent border border-accent/30 hover:bg-accent/20 px-3.5 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer`}
                           >
                             Activate Session
                           </button>
@@ -913,7 +914,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
                         {!selectedSession.isActive && (
                           <button
                             onClick={() => handleDeleteSession(selectedSession._id)}
-                            className="btn-base bg-danger-light text-danger border border-danger/30 hover:bg-danger/15 px-3.5 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer"
+                            className={`${btnBase} bg-danger-light text-danger border border-danger/30 hover:bg-danger/15 px-3.5 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer`}
                           >
                             Delete
                           </button>
@@ -981,7 +982,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
                           upload a transcript later.
                         </p>
                         <div className="flex items-center gap-3">
-                          <label className="btn-base bg-[rgb(var(--bg-card-rgb))] border border-border text-ink hover:bg-mist cursor-pointer px-4 py-2 text-[10px] font-bold rounded-lg">
+                          <label className={`${btnBase} bg-[rgb(var(--bg-card-rgb))] border border-border text-ink hover:bg-mist cursor-pointer px-4 py-2 text-[10px] font-bold rounded-lg`}>
                             {uploading ? 'Processing...' : 'Upload Transcript'}
                             <input
                               type="file"
@@ -1019,7 +1020,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
                         <button
                           onClick={handleRegeneratePool}
                           disabled={regenerating}
-                          className="btn-base bg-accent text-white hover:bg-accent/90 disabled:opacity-40 px-4 py-2 text-[10px] font-bold rounded-lg cursor-pointer"
+                          className={`${btnBase} bg-accent text-white hover:bg-accent/90 disabled:opacity-40 px-4 py-2 text-[10px] font-bold rounded-lg cursor-pointer`}
                         >
                           {regenerating
                             ? 'Generating…'
@@ -1163,7 +1164,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
                       <button
                         type="submit"
                         disabled={saving}
-                        className="btn-base btn-primary px-5 py-2 text-xs font-semibold cursor-pointer"
+                        className={`${btnBase} ${btnPrimary} px-5 py-2 text-xs font-semibold cursor-pointer`}
                       >
                         Save Parameters
                       </button>

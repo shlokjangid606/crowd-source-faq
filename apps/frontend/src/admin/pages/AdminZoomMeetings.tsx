@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback, useRef, type ChangeEvent } from 'react';
+import { useEffect, useState, useCallback, useRef, type ChangeEvent } from 'react'
+import { adminBtnOutline, adminInput } from '../../styles/style_config';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { Link } from 'react-router-dom';
 import adminApi from '../utils/adminApi';
@@ -316,7 +317,7 @@ export default function AdminZoomMeetings() {
           </div>
           <p className="text-xs text-ink-faint">Upload a Zoom VTT transcript or plain text file for AI FAQ extraction.</p>
 
-          <input id="upload-topic" type="text" placeholder="Meeting topic (e.g. Q3 Planning, Sprint Retro)" className="admin-input" />
+          <input id="upload-topic" type="text" placeholder="Meeting topic (e.g. Q3 Planning, Sprint Retro)" className={`${adminInput}`} />
 
           {uploadSelectedFile && !uploadMeetingId && (
             <div className="px-3 py-2.5 bg-[#2D8CFF]/10 border border-[#2D8CFF]/20 rounded-xl space-y-2">
@@ -333,7 +334,7 @@ export default function AdminZoomMeetings() {
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                   Process
                 </button>
-                <button onClick={handleTranscriptCancel} className="flex-1 admin-btn-outline text-xs py-1.5">Cancel</button>
+                <button onClick={handleTranscriptCancel} className={`flex-1 ${adminBtnOutline} text-xs py-1.5`}>Cancel</button>
               </div>
             </div>
           )}
@@ -491,7 +492,7 @@ export default function AdminZoomMeetings() {
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 Confirm & Process
               </button>
-              <button onClick={() => setShowProcessModal(false)} className="flex-1 admin-btn-outline text-sm py-2.5">Cancel</button>
+              <button onClick={() => setShowProcessModal(false)} className={`flex-1 ${adminBtnOutline} text-sm py-2.5`}>Cancel</button>
             </div>
           </div>
         </div>

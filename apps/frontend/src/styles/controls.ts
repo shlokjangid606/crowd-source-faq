@@ -27,6 +27,7 @@ export const adminLabel           = 'block text-xs font-medium text-ink-soft mb-
 
 /* ── Admin Buttons ──────────────────────────────────────────────── */
 export const adminBtnPrimary      = 'px-4 py-2 rounded-md text-sm font-medium bg-accent text-accent-text hover:bg-accent-hover disabled:opacity-40 transition-colors';
+export const adminBtnSecondary    = 'px-4 py-2 rounded-md text-sm font-medium bg-bg-secondary text-ink border border-border hover:bg-mist disabled:opacity-40 transition-colors';
 export const adminBtnGhost        = 'px-4 py-2 rounded-md text-sm text-ink-faint hover:text-ink hover:bg-mist transition-colors';
 export const adminBtnOutline      = 'px-4 py-2 rounded-md text-sm border border-border text-ink-soft hover:bg-mist disabled:opacity-40 transition-colors';
 export const adminBtnDanger       = 'px-4 py-2 rounded-md text-sm font-medium text-white bg-danger hover:bg-danger/80 disabled:opacity-40 transition-colors';
@@ -51,3 +52,20 @@ export const inputStandard       = 'w-full bg-bg border border-border rounded-lg
  * across 10+ fields. Keep the base classes (padding/radius/border)
  * in sync with inputStandard above. */
 export const inputStandardRing  = 'w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-ink focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50 transition-all';
+
+/* ── Legacy btn-* class compatibility ──────────────────────────────
+ * Pre-split refactor, the .btn-base / .btn-primary / .btn-secondary /
+ * .btn-ghost / .btn-outline / .btn-danger / .btn-warn / .btn-success
+ * styles lived in index.css. The CSS-split refactor removed them, but
+ * 20+ components still reference the class names. Rather than do a
+ * 20-file migration in a hotfix, re-export the equivalent Tailwind
+ * utility strings here so those references keep working AND match the
+ * design system. New code should prefer adminBtnPrimary etc. above. */
+export const btnBase       = 'inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-accent/30';
+export const btnPrimary    = 'btn-base bg-accent text-accent-text hover:bg-accent-hover active:bg-accent-hover/90 shadow-sm';
+export const btnSecondary  = 'btn-base bg-bg-secondary text-ink border border-border hover:bg-mist active:bg-mist/80';
+export const btnGhost      = 'btn-base text-ink-soft hover:text-ink hover:bg-mist/60 active:bg-mist';
+export const btnOutline    = 'btn-base border border-border text-ink hover:bg-mist active:bg-mist/80';
+export const btnDanger     = 'btn-base bg-danger text-white hover:bg-danger/85 active:bg-danger/80';
+export const btnWarn       = 'btn-base bg-warning text-white hover:bg-warning/85 active:bg-warning/80';
+export const btnSuccess    = 'btn-base bg-success text-white hover:bg-success/85 active:bg-success/80';

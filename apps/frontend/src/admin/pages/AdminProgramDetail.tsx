@@ -19,7 +19,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'framer-motion'
+import { adminBtnGhost, adminBtnPrimary } from '../../styles/style_config';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import adminApi from '../utils/adminApi';
 import { useBatch } from '../../context/BatchContext';
@@ -335,7 +336,7 @@ function SettingsTab({ programId }: { programId: string }) {
       </p>
       <Link
         to={`/admin/programs/${programId}/settings`}
-        className="admin-btn-primary text-sm"
+        className={`${adminBtnPrimary} text-sm`}
       >
         Open settings editor →
       </Link>
@@ -352,7 +353,7 @@ function CoursesTab({ programId: _programId }: { programId: string }) {
       </p>
       <Link
         to="/admin/courses"
-        className="admin-btn-primary text-sm"
+        className={`${adminBtnPrimary} text-sm`}
       >
         Open courses →
       </Link>
@@ -371,7 +372,7 @@ function MembersTab({ programId: _programId }: { programId: string }) {
       </p>
       <Link
         to="/admin/programs"
-        className="admin-btn-ghost text-sm"
+        className={`${adminBtnGhost} text-sm`}
       >
         View full roster
       </Link>
@@ -393,7 +394,7 @@ function AiTab({ programId: _programId }: { programId: string }) {
       </p>
       <a
         href={`/admin/ai-config?batchId=${_programId}`}
-        className="admin-btn-primary text-sm"
+        className={`${adminBtnPrimary} text-sm`}
       >
         Open AI config →
       </a>

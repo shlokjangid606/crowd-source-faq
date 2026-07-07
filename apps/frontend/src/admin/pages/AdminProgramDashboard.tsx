@@ -15,7 +15,8 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'framer-motion'
+import { adminBtnGhost, adminBtnPrimary } from '../../styles/style_config';
 import { Link, useNavigate } from 'react-router-dom';
 import adminApi from '../utils/adminApi';
 import { useBatch } from '../../context/BatchContext';
@@ -205,21 +206,21 @@ export default function AdminProgramDashboard(): React.ReactElement {
           <button
             type="button"
             onClick={() => { void load(); void refreshBatches(); }}
-            className="admin-btn-ghost text-xs"
+            className={`${adminBtnGhost} text-xs`}
             disabled={loading}
           >
             {loading ? 'Refreshing…' : 'Refresh'}
           </button>
           <Link
             to="/admin/courses"
-            className="admin-btn-ghost text-xs"
+            className={`${adminBtnGhost} text-xs`}
           >
             Manage courses
           </Link>
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="admin-btn-primary text-xs"
+            className={`${adminBtnPrimary} text-xs`}
             data-testid="create-program-button"
           >
             + Create program

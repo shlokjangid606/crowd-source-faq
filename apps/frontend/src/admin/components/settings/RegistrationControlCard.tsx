@@ -23,10 +23,11 @@
  * (so the admin can flip back without regenerating), but we de-emphasise
  * it in the UI to avoid suggesting it's the active registration path.
  */
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react'
+import { adminBtnPrimary, adminBtnSecondary, adminInput, adminLabel, dangerBorder, warningBorder } from '../../../styles/style_config';
 import adminApi from '../../utils/adminApi';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
-import { warningBorder, dangerBorder } from '../../../styles/style_config';
+
 
 interface ConfigResponse {
   enabled: boolean;
@@ -327,7 +328,7 @@ export default function RegistrationControlCard({ onSaved }: Props): React.React
 
         {/* Invite link */}
         <div className={openForAll ? 'opacity-70' : ''}>
-          <label className="admin-label">
+          <label className={`${adminLabel}`}>
             Current invite link
             {openForAll && (
               <span className="ml-2 text-[10px] uppercase tracking-wider text-warning">
@@ -340,14 +341,14 @@ export default function RegistrationControlCard({ onSaved }: Props): React.React
               readOnly
               value={loading ? 'Loading…' : inviteLink}
               onFocus={(e) => e.currentTarget.select()}
-              className="admin-input font-mono text-xs flex-1"
+              className={`${adminInput} font-mono text-xs flex-1`}
               aria-label="Current invite link URL"
             />
             <button
               type="button"
               onClick={copyLink}
               disabled={!inviteLink || loading}
-              className="admin-btn-secondary shrink-0"
+              className={`${adminBtnSecondary} shrink-0`}
             >
               {copied ? 'Copied!' : 'Copy'}
             </button>
@@ -366,7 +367,7 @@ export default function RegistrationControlCard({ onSaved }: Props): React.React
               type="button"
               onClick={() => setConfirmingRegen(true)}
               disabled={loading || regenerating}
-              className="admin-btn-secondary"
+              className={`${adminBtnSecondary}`}
             >
               Regenerate invite link
             </button>
@@ -381,7 +382,7 @@ export default function RegistrationControlCard({ onSaved }: Props): React.React
                   type="button"
                   onClick={regenerate}
                   disabled={regenerating}
-                  className="admin-btn-primary"
+                  className={`${adminBtnPrimary}`}
                 >
                   {regenerating ? 'Regenerating…' : 'Confirm regenerate'}
                 </button>
@@ -389,7 +390,7 @@ export default function RegistrationControlCard({ onSaved }: Props): React.React
                   type="button"
                   onClick={() => setConfirmingRegen(false)}
                   disabled={regenerating}
-                  className="admin-btn-secondary"
+                  className={`${adminBtnSecondary}`}
                 >
                   Cancel
                 </button>

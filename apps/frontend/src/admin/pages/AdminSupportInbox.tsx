@@ -4,11 +4,12 @@
 // disabled.
 
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom'
+import { STATUS_STYLES, adminSearchInput, adminSelect, adminTheadRow, tableTd, tableTh, tableTr } from '../../styles/style_config';
 import { listSupportRequests, SUPPORT_ISSUE_OPTIONS } from '../../components/support/api';
 import { getIssueIcon } from '../../components/support/icons';
 import type { SupportListResponse, SupportStatus } from '../../components/support/types';
-import { STATUS_STYLES, adminTheadRow, tableTh, tableTd, tableTr } from '../../styles/style_config';
+
 
 
 const STATUSES: (SupportStatus | '')[] = ['', 'Pending', 'In Review', 'Resolved', 'Rejected'];
@@ -92,10 +93,10 @@ function InboxInner(): React.ReactElement {
 
       {/* Filter row */}
       <div className="flex flex-wrap gap-2">
-        <select value={status} onChange={(e) => setParam('status', e.target.value)} className="admin-select">
+        <select value={status} onChange={(e) => setParam('status', e.target.value)} className={`${adminSelect}`}>
           {STATUSES.map((s) => <option key={s} value={s}>{s ? s : 'All Status'}</option>)}
         </select>
-        <select value={issueType} onChange={(e) => setParam('issueType', e.target.value)} className="admin-select">
+        <select value={issueType} onChange={(e) => setParam('issueType', e.target.value)} className={`${adminSelect}`}>
           <option value="">All Issue Types</option>
           {SUPPORT_ISSUE_OPTIONS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
         </select>
@@ -103,14 +104,14 @@ function InboxInner(): React.ReactElement {
           type="date"
           value={from}
           onChange={(e) => setParam('from', e.target.value)}
-          className="admin-search-input w-36"
+          className={`${adminSearchInput} w-36`}
           title="From date"
         />
         <input
           type="date"
           value={to}
           onChange={(e) => setParam('to', e.target.value)}
-          className="admin-search-input w-36"
+          className={`${adminSearchInput} w-36`}
           title="To date"
         />
       </div>

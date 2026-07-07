@@ -13,6 +13,8 @@ import logoWide from '../../assets/logo-wide.png';
 import {
   avatarColorDefault,
   avatarColorPalette,
+  btnBase,
+  btnPrimary,
   navHamburger,
   navMobileLinkActive,
   navMobileLinkBase,
@@ -133,8 +135,7 @@ export default function Navbar({ showProgramSwitcher: _showProgramSwitcher = fal
 
   return (
     <header className={`fixed top-2 sm:top-4 left-0 right-0 z-50 px-4 transition-all duration-[400ms] ease-smooth flex flex-col items-center ${isAdminView ? 'top-20 sm:top-24' : ''}`}>
-      <div className={`w-full max-w-[1200px] px-4 sm:px-6 h-14 sm:h-16 grid grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 items-center relative rounded-full transition-all duration-[400ms]
-        ${scrolled
+      <div className={`w-full max-w-[1200px] px-4 sm:px-6 h-14 sm:h-16 grid grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 items-center relative rounded-full transition-all duration-[400ms] ${scrolled
           ? 'bg-[rgb(var(--bg-card-rgb)_/_0.75)] backdrop-blur-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-[rgb(var(--border-rgb)_/_0.5)] saturate-[1.5]'
           : 'bg-[rgb(var(--bg-card-rgb)_/_0.4)] backdrop-blur-[12px] border border-[rgb(var(--border-rgb)_/_0.2)] shadow-[0_4px_20px_rgba(0,0,0,0.03)]'
         }`}
@@ -172,7 +173,7 @@ export default function Navbar({ showProgramSwitcher: _showProgramSwitcher = fal
                   </button>
                   <button
                     onClick={() => openModal('register')}
-                    className="btn-base btn-primary text-sm"
+                    className={`${btnBase} ${btnPrimary} text-sm`}
                   >
                     Get started
                   </button>
@@ -371,7 +372,7 @@ export default function Navbar({ showProgramSwitcher: _showProgramSwitcher = fal
               </button>
               <button
                 onClick={() => { openModal('register'); setMobileOpen(false); }}
-                className="btn-base btn-primary flex-1 text-sm"
+                className={`${btnBase} ${btnPrimary} flex-1 text-sm`}
               >
                 Get started
               </button>

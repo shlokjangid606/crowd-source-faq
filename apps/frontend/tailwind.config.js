@@ -125,6 +125,10 @@ export default {
           DEFAULT: 'rgb(var(--danger-rgb) / <alpha-value>)',
           light: 'var(--danger-bg)',
         },
+        info: {
+          DEFAULT: 'rgb(var(--info-rgb) / <alpha-value>)',
+          light: 'var(--info-bg)',
+        },
 
         // Legacy sage Tailwind palette — kept for backward compatibility
         // with older components. New code should use `accent` instead.

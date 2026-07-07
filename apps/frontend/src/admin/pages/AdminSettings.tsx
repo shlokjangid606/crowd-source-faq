@@ -1,4 +1,5 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react'
+import { adminBtnPrimary, adminInput, adminLabel } from '../../styles/style_config';
 import { motion } from 'framer-motion';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 import adminApi from '../utils/adminApi';
@@ -59,14 +60,14 @@ export default function AdminSettings() {
             </div>
           </div>
           <div>
-            <label className="admin-label">Display Name</label>
-            <input value={name} onChange={e => setName(e.target.value)} className="admin-input" />
+            <label className={`${adminLabel}`}>Display Name</label>
+            <input value={name} onChange={e => setName(e.target.value)} className={`${adminInput}`} />
           </div>
           <div>
-            <label className="admin-label">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="admin-input" />
+            <label className={`${adminLabel}`}>Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={`${adminInput}`} />
           </div>
-          <button onClick={saveProfile} disabled={saving} className="admin-btn-primary">{saving ? 'Saving…' : 'Save Profile'}</button>
+          <button onClick={saveProfile} disabled={saving} className={`${adminBtnPrimary}`}>{saving ? 'Saving…' : 'Save Profile'}</button>
         </div>
       </div>
 
@@ -78,11 +79,11 @@ export default function AdminSettings() {
         <form onSubmit={changePassword} className="px-5 py-4 space-y-3">
           {[{ label: 'Current Password', key: 'current' as const }, { label: 'New Password', key: 'next' as const }, { label: 'Confirm Password', key: 'confirm' as const }].map(f => (
             <div key={f.key}>
-              <label className="admin-label">{f.label}</label>
-              <input type="password" value={passwords[f.key]} onChange={e => setPasswords(p => ({ ...p, [f.key]: e.target.value }))} placeholder="••••••••" className="admin-input" />
+              <label className={`${adminLabel}`}>{f.label}</label>
+              <input type="password" value={passwords[f.key]} onChange={e => setPasswords(p => ({ ...p, [f.key]: e.target.value }))} placeholder="••••••••" className={`${adminInput}`} />
             </div>
           ))}
-          <button type="submit" className="admin-btn-primary">Change Password</button>
+          <button type="submit" className={`${adminBtnPrimary}`}>Change Password</button>
         </form>
       </div>
 
@@ -159,7 +160,7 @@ function GoldenTicketSettingsCard({ onSaved }: { onSaved: (msg: string, type: 's
       </div>
       <div className="px-5 py-4 space-y-5">
         <div>
-          <label className="admin-label">Cooldown (hours)</label>
+          <label className={`${adminLabel}`}>Cooldown (hours)</label>
           <p className="text-xs text-ink-faint mb-2">
             How long a user must wait after a Golden Ticket is closed (by admin
             resolution OR rejection) before submitting another. This is the only
@@ -175,13 +176,13 @@ function GoldenTicketSettingsCard({ onSaved }: { onSaved: (msg: string, type: 's
               value={cooldownHours}
               disabled={loading}
               onChange={(e) => setCooldownHours(Math.max(0, Math.min(720, Math.trunc(Number(e.target.value) || 0))))}
-              className="admin-input w-32"
+              className={`${adminInput} w-32`}
             />
             <button
               type="button"
               disabled={loading || savingKey === 'goldenCooldownHours'}
               onClick={() => save('goldenCooldownHours', cooldownHours)}
-              className="admin-btn-primary"
+              className={`${adminBtnPrimary}`}
             >
               {savingKey === 'goldenCooldownHours' ? 'Saving…' : 'Save'}
             </button>

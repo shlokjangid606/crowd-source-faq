@@ -14,7 +14,8 @@
  * status changes without refreshing the page.
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react'
+import { adminBtnPrimary, adminBtnSecondary, adminInput } from '../../styles/style_config';
 import { AnimatePresence, motion } from 'framer-motion';
 import adminApi from '../utils/adminApi';
 
@@ -241,7 +242,7 @@ export default function AdminSchedule(): React.ReactElement {
     return (
       <div className="admin-card-surface p-6">
         <p className="text-danger">Error loading schedule: {error}</p>
-        <button type="button" onClick={refresh} className="mt-3 admin-btn-secondary px-3 py-1.5 text-xs">Retry</button>
+        <button type="button" onClick={refresh} className={`mt-3 ${adminBtnSecondary} px-3 py-1.5 text-xs`}>Retry</button>
       </div>
     );
   }
@@ -291,7 +292,7 @@ export default function AdminSchedule(): React.ReactElement {
             placeholder="Search by name or description…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="admin-input text-sm flex-1 min-w-[200px]"
+            className={`${adminInput} text-sm flex-1 min-w-[200px]`}
           />
           <div className="flex gap-1.5 text-xs">
             {(['all', 'cron', 'overridden', 'erroring', 'running'] as const).map((f) => (
@@ -389,17 +390,17 @@ export default function AdminSchedule(): React.ReactElement {
                             }}
                             placeholder="5m, 2h, 1d, default"
                             autoFocus
-                            className="admin-input text-xs w-24 font-mono"
+                            className={`${adminInput} text-xs w-24 font-mono`}
                           />
                           <button
                             type="button"
                             onClick={() => void saveInterval(p.id, editingInterval)}
-                            className="admin-btn-primary px-2 py-0.5 text-[10px]"
+                            className={`${adminBtnPrimary} px-2 py-0.5 text-[10px]`}
                           >Save</button>
                           <button
                             type="button"
                             onClick={() => setEditingId(null)}
-                            className="admin-btn-secondary px-2 py-0.5 text-[10px]"
+                            className={`${adminBtnSecondary} px-2 py-0.5 text-[10px]`}
                           >Cancel</button>
                         </div>
                       ) : (
@@ -445,7 +446,7 @@ export default function AdminSchedule(): React.ReactElement {
                         <button
                           type="button"
                           onClick={() => setHistoryFor(p.id)}
-                          className="admin-btn-secondary px-2 py-1 text-[10px]"
+                          className={`${adminBtnSecondary} px-2 py-1 text-[10px]`}
                           title="View run history"
                         >
                           History
@@ -455,7 +456,7 @@ export default function AdminSchedule(): React.ReactElement {
                         <button
                           type="button"
                           onClick={() => void resetOverride(p.id)}
-                          className="admin-btn-secondary px-2 py-1 text-[10px] text-warning"
+                          className={`${adminBtnSecondary} px-2 py-1 text-[10px] text-warning`}
                           title="Reset to registered defaults"
                         >
                           Reset
@@ -466,7 +467,7 @@ export default function AdminSchedule(): React.ReactElement {
                           type="button"
                           onClick={() => void trigger(p.id)}
                           disabled={triggering === p.id || p.isRunning}
-                          className="admin-btn-secondary px-2 py-1 text-[10px] disabled:opacity-50 disabled:cursor-not-allowed"
+                          className={`${adminBtnSecondary} px-2 py-1 text-[10px] disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                           {triggering === p.id ? 'Running…' : p.isRunning ? 'In flight' : 'Run now'}
                         </button>
@@ -583,14 +584,14 @@ function HistoryDrawer({ jobId, onClose }: { jobId: string; onClose: () => void 
               type="button"
               onClick={clear}
               disabled={clearing || runs.length === 0}
-              className="admin-btn-secondary px-3 py-1.5 text-xs text-danger disabled:opacity-50"
+              className={`${adminBtnSecondary} px-3 py-1.5 text-xs text-danger disabled:opacity-50`}
             >
               {clearing ? 'Clearing…' : 'Clear history'}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="admin-btn-secondary px-3 py-1.5 text-xs"
+              className={`${adminBtnSecondary} px-3 py-1.5 text-xs`}
             >
               Close
             </button>

@@ -18,7 +18,8 @@
  *   §8  Audit log on every action.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { adminBtnDanger, adminBtnSecondary, adminBtnSuccess } from '../../styles/style_config';
 import { useSearchParams } from 'react-router-dom';
 import adminApi from '../utils/adminApi';
 
@@ -590,7 +591,7 @@ export default function AdminGoldenTickets(): React.ReactElement {
                           setResolveAnswer('');
                         }}
                         disabled={actionLoading === t._id}
-                        className="admin-btn-success text-xs px-3 py-1.5"
+                        className={`${adminBtnSuccess} text-xs px-3 py-1.5`}
                       >
                         Approve / Resolve
                       </button>
@@ -601,7 +602,7 @@ export default function AdminGoldenTickets(): React.ReactElement {
                             setRejectReason('');
                           }}
                           disabled={actionLoading === t._id}
-                          className="admin-btn-secondary text-xs px-3 py-1.5"
+                          className={`${adminBtnSecondary} text-xs px-3 py-1.5`}
                         >
                           Reject
                         </button>
@@ -613,7 +614,7 @@ export default function AdminGoldenTickets(): React.ReactElement {
                             setBanReason('');
                           }}
                           disabled={actionLoading === t._id}
-                          className="admin-btn-danger text-xs px-3 py-1.5"
+                          className={`${adminBtnDanger} text-xs px-3 py-1.5`}
                         >
                           Ban User + Reject
                         </button>
@@ -628,7 +629,7 @@ export default function AdminGoldenTickets(): React.ReactElement {
                       <button
                         onClick={() => toggleLogs(t._id)}
                         aria-expanded={expandedLogs.has(t._id)}
-                        className="admin-btn-secondary text-xs px-3 py-1.5"
+                        className={`${adminBtnSecondary} text-xs px-3 py-1.5`}
                       >
                         {expandedLogs.has(t._id) ? 'Hide logs' : 'View logs'}
                       </button>
@@ -704,7 +705,7 @@ export default function AdminGoldenTickets(): React.ReactElement {
                           disabled={
                             reResolveSending === t._id || !(reResolveDrafts[t._id] ?? '').trim()
                           }
-                          className="admin-btn-success text-xs px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className={`${adminBtnSuccess} text-xs px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                           {reResolveSending === t._id ? 'Posting…' : 'Send another answer'}
                         </button>
@@ -734,7 +735,7 @@ export default function AdminGoldenTickets(): React.ReactElement {
                           void doReject(t._id, rejectReason);
                         }}
                         disabled={actionLoading === t._id}
-                        className="admin-btn-secondary text-xs px-3 py-1.5"
+                        className={`${adminBtnSecondary} text-xs px-3 py-1.5`}
                       >
                         Confirm Reject
                       </button>
@@ -776,7 +777,7 @@ export default function AdminGoldenTickets(): React.ReactElement {
                           void doBan(t._id, banReason);
                         }}
                         disabled={actionLoading === t._id}
-                        className="admin-btn-danger text-xs px-3 py-1.5"
+                        className={`${adminBtnDanger} text-xs px-3 py-1.5`}
                       >
                         Confirm Ban + Reject
                       </button>
@@ -890,7 +891,7 @@ export default function AdminGoldenTickets(): React.ReactElement {
                   }
                 }}
                 disabled={actionLoading === resolveModalId}
-                className="admin-btn-success text-xs px-3 py-1.5 disabled:opacity-50"
+                className={`${adminBtnSuccess} text-xs px-3 py-1.5 disabled:opacity-50`}
               >
                 {actionLoading === resolveModalId ? 'Resolving…' : 'Confirm Resolve'}
               </button>

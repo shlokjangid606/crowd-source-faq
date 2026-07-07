@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
+import { adminBtnDanger, adminBtnGhost, adminBtnPrimary, adminBtnWarn, adminInput, adminLabel, adminSelect, adminTextarea } from '../../styles/style_config';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import adminApi from '../utils/adminApi';
 import { friendlyError } from '../../utils/api';
@@ -408,15 +409,15 @@ export default function FaqReview() {
                   </div>
                   {editData ? (
                     <div className="space-y-2">
-                      <input value={editData.question} onChange={e => setEditData({ ...editData, question: e.target.value })} className="admin-input" placeholder="Question..." />
-                      <textarea value={editData.answer} onChange={e => setEditData({ ...editData, answer: e.target.value })} className="admin-textarea" rows={4} placeholder="Answer..." />
-                      <select value={editData.category} onChange={e => setEditData({ ...editData, category: e.target.value })} className="admin-select w-full">
+                      <input value={editData.question} onChange={e => setEditData({ ...editData, question: e.target.value })} className={`${adminInput}`} placeholder="Question..." />
+                      <textarea value={editData.answer} onChange={e => setEditData({ ...editData, answer: e.target.value })} className={`${adminTextarea}`} rows={4} placeholder="Answer..." />
+                      <select value={editData.category} onChange={e => setEditData({ ...editData, category: e.target.value })} className={`${adminSelect} w-full`}>
                         {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
-                      <input value={editData.tags?.join(', ')} onChange={e => setEditData({ ...editData, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })} className="admin-input" placeholder="Tags (comma separated)..." />
+                      <input value={editData.tags?.join(', ')} onChange={e => setEditData({ ...editData, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })} className={`${adminInput}`} placeholder="Tags (comma separated)..." />
                       <div className="flex gap-2">
-                        <button onClick={() => setEditData(null)} className="admin-btn-ghost text-xs px-3 py-1.5">Cancel</button>
-                        <button onClick={() => handleEditSave(viewItem)} disabled={actioning === viewItem._id} className="admin-btn-primary text-xs px-3 py-1.5">
+                        <button onClick={() => setEditData(null)} className={`${adminBtnGhost} text-xs px-3 py-1.5`}>Cancel</button>
+                        <button onClick={() => handleEditSave(viewItem)} disabled={actioning === viewItem._id} className={`${adminBtnPrimary} text-xs px-3 py-1.5`}>
                           {actioning === viewItem._id ? '...' : 'Save Changes'}
                         </button>
                       </div>
@@ -489,7 +490,7 @@ export default function FaqReview() {
                   </>
                 )}
               </div>
-              <button onClick={() => { setViewItem(null); setEditData(null); }} className="admin-btn-ghost text-sm">Close</button>
+              <button onClick={() => { setViewItem(null); setEditData(null); }} className={`${adminBtnGhost} text-sm`}>Close</button>
             </div>
           </div>
         </div>
@@ -516,7 +517,7 @@ export default function FaqReview() {
                   </div>
                 )}
                 <div>
-                  <div className="admin-label">Tags to merge</div>
+                  <div className={`${adminLabel}`}>Tags to merge</div>
                   <div className="flex flex-wrap gap-1">
                     {(item.aiGeneratedFaq?.tags ?? item.tags ?? []).map(tag => (
                       <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent rounded border border-accent/20">{tag}</span>
@@ -527,13 +528,13 @@ export default function FaqReview() {
                   value={objectReason}
                   onChange={e => setObjectReason(e.target.value)}
                   placeholder="Merge target FAQ ID (MongoDB ObjectId)..."
-                  className="admin-textarea font-mono"
+                  className={`${adminTextarea} font-mono`}
                   rows={2}
                 />
               </div>
               <div className="admin-modal-footer justify-end">
-                <button onClick={() => { setMergeTarget(''); setObjectReason(''); }} className="admin-btn-ghost">Cancel</button>
-                <button onClick={() => handleMerge(item)} disabled={!objectReason.trim() || actioning === item._id} className="admin-btn-warn">
+                <button onClick={() => { setMergeTarget(''); setObjectReason(''); }} className={`${adminBtnGhost}`}>Cancel</button>
+                <button onClick={() => handleMerge(item)} disabled={!objectReason.trim() || actioning === item._id} className={`${adminBtnWarn}`}>
                   {actioning === item._id ? '...' : 'Merge'}
                 </button>
               </div>
@@ -558,16 +559,16 @@ export default function FaqReview() {
                 value={objectReason}
                 onChange={e => setObjectReason(e.target.value)}
                 placeholder="Reason for objection..."
-                className="admin-textarea"
+                className={`${adminTextarea}`}
                 rows={3}
               />
             </div>
             <div className="admin-modal-footer justify-end">
-              <button onClick={() => { setObjectModal(null); setObjectReason(''); }} className="admin-btn-ghost">Cancel</button>
+              <button onClick={() => { setObjectModal(null); setObjectReason(''); }} className={`${adminBtnGhost}`}>Cancel</button>
               <button
                 onClick={() => handleReject(objectModal)}
                 disabled={!objectReason.trim() || actioning === objectModal}
-                className="admin-btn-danger"
+                className={`${adminBtnDanger}`}
               >
                 {actioning === objectModal ? '...' : 'Submit Objection'}
               </button>

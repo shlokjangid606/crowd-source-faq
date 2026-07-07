@@ -22,7 +22,8 @@
  * charged" copy.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { adminBtnSecondary, adminBtnSuccess } from '../../styles/style_config';
 import { useSearchParams } from 'react-router-dom';
 import adminApi from '../utils/adminApi';
 
@@ -539,7 +540,7 @@ export default function AdminGoldenLogs(): React.ReactElement {
                               void sendAnotherAnswer(t._id);
                             }}
                             disabled={sending === t._id || !draft.trim()}
-                            className="admin-btn-success text-xs px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`${adminBtnSuccess} text-xs px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed`}
                           >
                             {sending === t._id ? 'Posting…' : 'Send another answer'}
                           </button>
@@ -557,7 +558,7 @@ export default function AdminGoldenLogs(): React.ReactElement {
                               void reopenTicket(t._id);
                             }}
                             disabled={sending === t._id}
-                            className="admin-btn-secondary text-xs px-3 py-1.5 disabled:opacity-50"
+                            className={`${adminBtnSecondary} text-xs px-3 py-1.5 disabled:opacity-50`}
                           >
                             {sending === t._id
                               ? 'Reopening…'

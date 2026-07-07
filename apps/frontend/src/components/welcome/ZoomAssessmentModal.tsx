@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../utils/api';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
-import { modalCloseButton } from '../../styles/style_config';
+import { modalCloseButton, btnBase, btnPrimary} from '../../styles/style_config';
 
 interface ZoomAssessmentModalProps {
   onClose: () => void;
@@ -212,7 +212,7 @@ export default function ZoomAssessmentModal({ onClose }: ZoomAssessmentModalProp
           ) : error ? (
             <div className="text-center p-[32px] flex-1 flex flex-col justify-center items-center overflow-y-auto gap-[20px]">
               <p className="text-danger font-medium text-sm sm:text-base leading-relaxed">{error}</p>
-              <button onClick={onClose} className="btn-base bg-mist hover:bg-border cursor-pointer rounded-xl px-6 py-2.5 text-sm font-semibold text-ink-soft">Close</button>
+              <button onClick={onClose} className={`${btnBase} bg-mist hover:bg-border cursor-pointer rounded-xl px-6 py-2.5 text-sm font-semibold text-ink-soft`}>Close</button>
             </div>
           ) : status === 'passed' ? (
             <div className="text-center p-[32px] overflow-y-auto flex-1 flex flex-col justify-center items-center gap-[20px]">
@@ -237,7 +237,7 @@ export default function ZoomAssessmentModal({ onClose }: ZoomAssessmentModalProp
                   href={zoomDetails?.zoomUrl || '#'} 
                   target="_blank" 
                   rel="noreferrer"
-                  className="btn-base btn-primary w-full text-center block py-3 rounded-full text-sm font-semibold transition-all duration-200"
+                  className={`${btnBase} ${btnPrimary} w-full text-center block py-3 rounded-full text-sm font-semibold transition-all duration-200`}
                 >
                   Join Zoom Session
                 </a>
@@ -255,7 +255,7 @@ export default function ZoomAssessmentModal({ onClose }: ZoomAssessmentModalProp
                   setResultMessage(null);
                   fetchQuestions();
                 }}
-                className="btn-base btn-primary cursor-pointer px-8 py-2.5 font-semibold text-sm rounded-full"
+                className={`${btnBase} ${btnPrimary} cursor-pointer px-8 py-2.5 font-semibold text-sm rounded-full`}
               >
                 Try Again
               </button>
@@ -325,7 +325,7 @@ export default function ZoomAssessmentModal({ onClose }: ZoomAssessmentModalProp
               <button
                 onClick={handleSubmit}
                 disabled={answers[questions[currentIdx].id] === undefined}
-                className="btn-base btn-primary px-8 py-2.5 font-semibold text-sm cursor-pointer rounded-full"
+                className={`${btnBase} ${btnPrimary} px-8 py-2.5 font-semibold text-sm cursor-pointer rounded-full`}
               >
                 Submit
               </button>
@@ -333,7 +333,7 @@ export default function ZoomAssessmentModal({ onClose }: ZoomAssessmentModalProp
               <button
                 onClick={handleNext}
                 disabled={answers[questions[currentIdx].id] === undefined}
-                className="btn-base bg-ink text-white hover:bg-ink-soft px-8 py-2.5 font-semibold text-sm cursor-pointer rounded-full"
+                className={`${btnBase} bg-ink text-white hover:bg-ink-soft px-8 py-2.5 font-semibold text-sm cursor-pointer rounded-full`}
               >
                 Next
               </button>
