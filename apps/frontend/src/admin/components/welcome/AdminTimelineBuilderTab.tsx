@@ -132,10 +132,10 @@ function SortableStepCard({
         <div className="flex items-center gap-2 mb-1">
           <h3 className="text-sm font-bold text-ink truncate">{step.title}</h3>
           {step.isMandatory && (
-            <span className="px-1.5 py-0.5 text-[8px] uppercase font-bold tracking-widest bg-red-500/10 text-red-500 rounded">Required</span>
+            <span className="px-1.5 py-0.5 text-[8px] uppercase font-bold tracking-widest bg-danger/10 text-danger rounded">Required</span>
           )}
           {step.isLocked && (
-            <span className="px-1.5 py-0.5 text-[8px] uppercase font-bold tracking-widest bg-yellow-500/10 text-yellow-600 rounded">Locked</span>
+            <span className="px-1.5 py-0.5 text-[8px] uppercase font-bold tracking-widest bg-warning/10 text-warning rounded">Locked</span>
           )}
           <span className={`px-1.5 py-0.5 text-[8px] uppercase font-bold tracking-widest rounded ${
             step.status === 'active' ? 'bg-accent/10 text-accent' : 'bg-ink/10 text-ink-faint'
@@ -161,7 +161,7 @@ function SortableStepCard({
         </button>
         <button
           onClick={() => onDelete(step._id)}
-          className="p-2 rounded-lg text-red-500/60 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+          className="p-2 rounded-lg text-danger/60 hover:text-danger hover:bg-danger/10 transition-colors"
           title="Delete"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -484,7 +484,7 @@ export default function AdminTimelineBuilderTab() {
                                 <input type="checkbox" checked={item.isMandatory} onChange={e => updateChecklistItem(i, 'isMandatory', e.target.checked)} className="w-4 h-4 rounded border-border" />
                                 Required
                               </label>
-                              <button type="button" onClick={() => removeChecklistItem(i)} className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors" title="Remove item">
+                              <button type="button" onClick={() => removeChecklistItem(i)} className="p-1.5 text-danger/60 hover:text-danger hover:bg-danger/10 rounded-md transition-colors" title="Remove item">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                               </button>
                             </div>
@@ -519,7 +519,7 @@ export default function AdminTimelineBuilderTab() {
                                 <option value="doc">Document</option>
                                 <option value="discord">Discord</option>
                               </select>
-                              <button type="button" onClick={() => removeResource(i)} className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors" title="Remove resource">
+                              <button type="button" onClick={() => removeResource(i)} className="p-1.5 text-danger/60 hover:text-danger hover:bg-danger/10 rounded-md transition-colors" title="Remove resource">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                               </button>
                             </div>

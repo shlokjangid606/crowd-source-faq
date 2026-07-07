@@ -694,7 +694,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
                     <span className="text-[10px] text-ink-faint">•</span>
                     <button
                       onClick={() => handleDeleteQuestion(q._id)}
-                      className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer"
+                      className="text-[10px] font-bold text-danger hover:text-danger cursor-pointer"
                     >
                       Delete
                     </button>
@@ -731,7 +731,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
             <h2 className="text-base font-bold text-ink flex items-center gap-2">
               Zoom Onboarding Assessment Gateway
               <span
-                className={`w-2.5 h-2.5 rounded-full inline-block ${isGlobalActive ? 'bg-accent animate-pulse' : 'bg-red-500'}`}
+                className={`w-2.5 h-2.5 rounded-full inline-block ${isGlobalActive ? 'bg-accent animate-pulse' : 'bg-danger'}`}
               />
             </h2>
             <p className="text-xs text-ink-soft mt-0.5">
@@ -742,7 +742,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
             onClick={handleGlobalActiveToggle}
             className={`btn-base px-5 py-2.5 font-semibold text-xs rounded-full border transition-all duration-300 cursor-pointer ${
               isGlobalActive
-                ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100/50'
+                ? 'bg-danger-light text-danger border-danger/30 hover:bg-danger/15'
                 : 'bg-accent/10 text-accent border-accent/30 hover:bg-accent/20'
             }`}
           >
@@ -913,7 +913,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
                         {!selectedSession.isActive && (
                           <button
                             onClick={() => handleDeleteSession(selectedSession._id)}
-                            className="btn-base bg-red-50 text-red-600 border border-red-100 hover:bg-red-100/50 px-3.5 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer"
+                            className="btn-base bg-danger-light text-danger border border-danger/30 hover:bg-danger/15 px-3.5 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer"
                           >
                             Delete
                           </button>
@@ -950,7 +950,7 @@ export default function AdminZoomTab({ mode = 'assessments' }: AdminZoomTabProps
                         <span className="block text-[9px] font-bold text-ink-faint uppercase mb-0.5">
                           Failed Today
                         </span>
-                        <span className="text-lg font-black text-red-500">
+                        <span className="text-lg font-black text-danger">
                           {selectedSession.stats?.failedToday || 0}
                         </span>
                       </div>

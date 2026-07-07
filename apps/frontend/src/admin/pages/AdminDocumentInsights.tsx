@@ -54,7 +54,7 @@ function TypeBadge({ type }: { type: DocumentInsight['type'] }) {
   const styles: Record<DocumentInsight['type'], string> = {
     FAQ: 'bg-accent/10 text-accent',
     Announcement: 'bg-accent/10 text-accent',
-    Policy: 'bg-amber-500/10 text-amber-400',
+    Policy: 'bg-warning/10 text-warning',
     HowTo: 'bg-accent/10 text-accent',
   };
   return (
@@ -239,7 +239,7 @@ export default function AdminDocumentInsights() {
                 <TypeBadge type={i.type} />
                 <StatusBadge status={i.status} />
                 {i.searchMatchCount > 0 && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-pink-500/10 text-pink-400" title="UnresolvedSearch log match count">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-accent/10 text-accent" title="UnresolvedSearch log match count">
                     🔥 {i.searchMatchCount} match{i.searchMatchCount === 1 ? '' : 'es'}
                   </span>
                 )}
