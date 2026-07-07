@@ -29,7 +29,7 @@ export type AIProvider =
 
 export interface ResolvedProviderConfig {
   provider: AIProvider;
-  model: string;
+  modelName: string;
   apiKeyField: string;
   baseURL: string;
   authHeader: string;
@@ -83,8 +83,8 @@ class AIProviderResolverService {
     }
 
     const featureConfig = dbConfig?.features?.[feature];
-    const rawModel = featureConfig?.model || config.model;
-    const model = getModelForProvider(rawModel, config.provider, config.model);
+    const rawModel = featureConfig?.model || config.modelName;
+    const model = getModelForProvider(rawModel, config.provider, config.modelName);
     if (!model) {
       throw new Error(
         `No AI model configured for provider '${config.provider}' on feature '${feature}'. ` +
@@ -97,7 +97,7 @@ class AIProviderResolverService {
 
     return {
       provider: config.provider,
-      model,
+      modelName: model,
       apiKeyField: config.apiKey,
       baseURL: config.baseURL,
       authHeader: config.authHeader,
