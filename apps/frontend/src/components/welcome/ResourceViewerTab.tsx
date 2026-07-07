@@ -41,6 +41,8 @@ interface Resource {
   description: string;
   url: string;
   completionThreshold: number;
+  publicId?: string | null;
+  pageCount?: number | null;
 }
 
 interface CompletionMap {
@@ -70,7 +72,7 @@ function safeResourceUrl(value: string | undefined | null): string | null {
   // Allow http(s), mailto, blob (rare but legitimate), and data: for
   // small embedded resources. Block everything else — most importantly
   // javascript: and vbscript:.
-  if (/^(https?:|mailto:|blob:|data:image\/)/i.test(v)) return v;
+  if (/^(\/(?!\/)|https?:|mailto:|blob:|data:image\/)/i.test(v)) return v;
   return null;
 }
 
@@ -382,8 +384,57 @@ function VideoRow({ resource, completed, onComplete }: RowProps): React.ReactEle
 function PdfRow({ resource, completed, onComplete }: RowProps): React.ReactElement {
   const threshold = Math.max(5, resource.completionThreshold);
   const { elapsed, start } = useElapsedTimer(true, threshold, onComplete);
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = resource.pageCount || 1;
+
+  // Start the viewing timer on mount for custom viewer
+  useEffect(() => {
+    start();
+  }, [start]);
+
+  const buildPageUrl = (url: string, pageNum: number) => {
+    const base = url.replace(/\.pdf$/i, '.png');
+    const marker = '/upload/';
+    const idx = base.indexOf(marker);
+    if (idx === -1) return base;
+    return `${base.slice(0, idx + marker.length)}pg_${pageNum}/${base.slice(idx + marker.length)}`;
+  };
+
+  const handlePrev = () => {
+    setCurrentPage((p) => Math.max(1, p - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentPage((p) => Math.min(totalPages, p + 1));
+  };
+
+  const isCloudinary = !!(resource.publicId && resource.url.startsWith('https://res.cloudinary.com/'));
+
+  if (!isCloudinary) {
+    return (
+      <div className="space-y-2">
+        <HeaderRow
+          resource={resource}
+          completed={completed}
+          children={
+            <span className="text-[11px] text-ink-soft font-mono">
+              {elapsed}s / {threshold}s
+            </span>
+          }
+        />
+        <div
+          className="rounded-lg border border-border overflow-hidden bg-mist/30 h-[480px]"
+          onMouseEnter={start}
+          onTouchStart={start}
+        >
+          <iframe src={resource.url} title={resource.title} className="w-full h-full" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <HeaderRow
         resource={resource}
         completed={completed}
@@ -393,12 +444,65 @@ function PdfRow({ resource, completed, onComplete }: RowProps): React.ReactEleme
           </span>
         }
       />
-      <div
-        className="rounded-lg border border-border overflow-hidden bg-mist/30 h-[480px]"
+      
+      <div 
+        className="relative flex flex-col items-center rounded-xl border border-border bg-card shadow-lg overflow-hidden"
         onMouseEnter={start}
         onTouchStart={start}
       >
-        <iframe src={resource.url} title={resource.title} className="w-full h-full" />
+        {/* Main Document Page Image */}
+        <div className="w-full flex items-center justify-center p-6 bg-mist/10 min-h-[500px] sm:min-h-[600px]">
+          <img
+            key={currentPage}
+            src={buildPageUrl(resource.url, currentPage)}
+            alt={`${resource.title} - Page ${currentPage}`}
+            className="max-h-[700px] w-auto object-contain rounded-md shadow-md border border-border/50 select-none transition-all duration-300"
+          />
+        </div>
+
+        {/* Navigation & Controls */}
+        <div className="w-full border-t border-border/80 px-4 py-3 bg-[rgb(var(--bg-primary-rgb))]/90 backdrop-blur-md flex items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={handlePrev}
+            disabled={currentPage === 1}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-border/60 hover:bg-mist/40 active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+            Prev
+          </button>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={currentPage}
+              onChange={(e) => setCurrentPage(Number(e.target.value))}
+              className="bg-bg border border-border/80 rounded-md px-2.5 py-1 text-xs font-semibold font-mono text-ink focus:outline-none focus:ring-1 focus:ring-accent"
+            >
+              {Array.from({ length: totalPages }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  Page {i + 1}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs text-ink-soft">
+              of {totalPages}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-border/60 hover:bg-mist/40 active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all"
+          >
+            Next
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
