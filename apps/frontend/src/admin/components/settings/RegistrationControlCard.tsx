@@ -26,6 +26,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import adminApi from '../../utils/adminApi';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
+import { warningBorder, dangerBorder } from '../../../styles/style_config';
 
 interface ConfigResponse {
   enabled: boolean;
@@ -224,7 +225,7 @@ export default function RegistrationControlCard({ onSaved }: Props): React.React
         {/* Error banner — shown when initial load fails */}
         {error && (
           <div
-            className="rounded-md px-3 py-2 text-xs border border-red-200 bg-red-50 text-red-900"
+            className={dangerBorder}
             aria-live="assertive"
           >
             <span className="font-semibold">Load failed: </span>
@@ -237,10 +238,10 @@ export default function RegistrationControlCard({ onSaved }: Props): React.React
           className={[
             'rounded-md px-3 py-2 text-xs border',
             modeBanner.tone === 'closed'
-              ? 'bg-red-50 border-red-200 text-red-900'
+              ? dangerBorder
               : modeBanner.tone === 'open'
                 ? 'bg-accent/10 border-accent/30 text-accent'
-                : 'bg-amber-50 border-amber-200 text-amber-900',
+                : warningBorder,
           ].join(' ')}
           aria-live="polite"
         >
@@ -295,7 +296,7 @@ export default function RegistrationControlCard({ onSaved }: Props): React.React
               regenerating.
             </p>
             {!enabled && (
-              <p className="text-[11px] text-amber-700 mt-1">
+              <p className="text-[11px] text-warning mt-1">
                 Enable "Allow new registrations" first to make this take effect.
               </p>
             )}
@@ -329,7 +330,7 @@ export default function RegistrationControlCard({ onSaved }: Props): React.React
           <label className="admin-label">
             Current invite link
             {openForAll && (
-              <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-700">
+              <span className="ml-2 text-[10px] uppercase tracking-wider text-warning">
                 Inactive — open-for-all is on
               </span>
             )}
@@ -370,9 +371,9 @@ export default function RegistrationControlCard({ onSaved }: Props): React.React
               Regenerate invite link
             </button>
           ) : (
-            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-2">
-              <p className="text-xs text-amber-900">
-                Regenerating will invalidate the current link immediately.
+            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 space-y-2">
+              <p className="text-xs text-warning">
+                <span className="font-semibold">Heads up:</span> the token in the link above was issued under the previous settings. Regenerate to invalidate the old token.
                 Anyone using the old link will get a 403.
               </p>
               <div className="flex items-center gap-2">
