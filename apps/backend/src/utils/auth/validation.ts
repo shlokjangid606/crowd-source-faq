@@ -144,9 +144,17 @@ export const warnUserSchema = z.object({
 
 export const suspendUserSchema = z.object({
   userId:   z.string().regex(/^[0-9a-fA-F]{24}$/),
-  days:     z.coerce.number().int().min(1).max(365),
+  // 5.1 fix: the controller reads `duration` as a string like `"24h"` or `"7d"`,
+  // not a `days: number`. We accept BOTH for backward compat — `days` is
+  // still honored by the controller (converted internally to `${days}d`),
+  // but new callers should prefer `duration`.
+  duration: z.string().regex(/^\d+(h|d)$/).optional(),
+  days:     z.coerce.number().int().min(1).max(365).optional(),
   reason:   z.string().min(3).max(500),
-});
+}).refine(
+  (data) => data.duration !== undefined || data.days !== undefined,
+  { message: 'Either duration (e.g. "24h", "7d") or days (1-365) is required.' },
+);
 
 export const banUserSchema = z.object({
   userId: z.string().regex(/^[0-9a-fA-F]{24}$/),
