@@ -32,6 +32,7 @@ import SearchFeedback from '../components/faq/SearchFeedback';
 import QuestionList from '../components/faq/QuestionList';
 import QuestionDetail from '../components/faq/QuestionDetail';
 import CTA from '../components/ui/CTA';
+import { searchPanel } from '../styles/style_config';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Main page
@@ -297,7 +298,7 @@ export default function FAQPage() {
     <div className="min-h-screen bg-bg grid-bg relative">
       <HomeDoodles />
 
-      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-[112px] sm:pt-[128px] pb-10 relative z-10">
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-10 relative z-10">
         {/* Active program pill */}
         <div className="flex justify-center">
           <UserActiveProgramIndicator />
@@ -443,7 +444,7 @@ export default function FAQPage() {
             user keeps their navigation scaffold.
         */}
         {!loading && !error && !activeQuestion && searchActive && (
-          <section className="max-w-4xl mx-auto mt-6 search-panel p-6">
+          <section className={`${searchPanel} max-w-4xl mx-auto mt-6 p-6`}>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div>
                 <p className="text-xs font-semibold text-ink-faint uppercase tracking-wide">Search results</p>

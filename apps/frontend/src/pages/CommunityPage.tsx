@@ -260,7 +260,7 @@ export default function CommunityPage() {
     <div className="min-h-screen bg-bg grid-bg relative">
       <CommunityDoodles />
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 pt-28 sm:pt-32 pb-8 sm:pb-10 relative z-10">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-8 sm:pb-10 relative z-10">
         {/* v1.69 — Phase 12: persistent "browsing program" pill
             so the user always knows which program's community
             feed they're scrolling. The pill reads from

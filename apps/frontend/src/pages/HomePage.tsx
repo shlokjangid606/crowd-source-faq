@@ -596,7 +596,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-bg grid-bg relative">
       <HomeDoodles />
 
-      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-[112px] sm:pt-[128px] pb-10 relative z-10">
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-10 relative z-10">
         {/* ─── HERO (badge · eyebrow · title · stats · search · pills) ─── */}
         <section className="relative pt-2 sm:pt-4 pb-2 text-center" aria-label="Page header">
           {/* Icon badge */}

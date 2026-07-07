@@ -10,7 +10,7 @@ import { useAuthGate } from '../../context/AuthModalContext';
 import { useBatch } from '../../context/BatchContext';
 import { useCategoryClusters } from '../explore/usePublicFaqApi';
 import type { SearchResult, TrendingQuery } from '../../types/ui';
-import { textLabelXsMb1 } from '../../styles/style_config';
+import { searchListItemCompact, searchPanel, searchPanelLoadingSkeleton, textLabelXsMb1 } from '../../styles/style_config';
 
 interface InteractiveSearchOverlayProps {
   onSearchComplete?: (query: string) => void;
@@ -173,7 +173,7 @@ export default function InteractiveSearchOverlay({ onSearchComplete, variant = '
 
         {showDropdown && (
           <div className={`absolute ${variant === 'compact' ? 'right-0 w-[480px] lg:w-[600px] max-w-[100vw]' : 'left-0 right-0 max-w-3xl'} top-full mt-3 z-50 animate-fade-in text-left`}>
-            <div className="search-panel">
+            <div className={searchPanel}>
               <div className="flex items-center justify-between px-4 pt-4 pb-2">
                 <div>
                   <div className="flex items-center gap-1.5 text-[11px] mb-1">
@@ -227,7 +227,7 @@ export default function InteractiveSearchOverlay({ onSearchComplete, variant = '
                       [1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className="h-[86px] rounded-2xl search-skeleton animate-pulse"
+                          className={`h-[86px] ${searchPanelLoadingSkeleton}`}
                         />
                       ))
                     )}
@@ -291,7 +291,7 @@ export default function InteractiveSearchOverlay({ onSearchComplete, variant = '
                         <button
                           key={cat.name}
                           onClick={() => handleQuickSearch(cat.name)}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-2xl border border-border/60 bg-transparent text-left transition-colors search-list-item"
+                          className={`${searchListItemCompact}`}
                         >
                           <span className="opacity-40 group-hover:opacity-100 transition-opacity">{cat.icon}</span>
                           <span className="text-sm text-ink">{cat.name}</span>
@@ -310,7 +310,7 @@ export default function InteractiveSearchOverlay({ onSearchComplete, variant = '
                           the actual load. */}
                       {trendingLoading && (
                         [1, 2, 3].map((i) => (
-                          <div key={i} className="h-8 w-24 rounded-full search-skeleton animate-pulse" />
+                          <div key={i} className={`h-8 w-24 rounded-full ${searchPanelLoadingSkeleton}`} />
                         ))
                       )}
 

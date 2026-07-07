@@ -445,6 +445,898 @@ select option {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   Legacy component classes — restored from pre-refactor index.css.
+   These were removed in commit abe1c73 (refactor(frontend/styles):
+   split style_config.ts) but 380+ JSX sites still reference them
+   as plain className= strings. Pending a future migration to
+   style_config.ts constants; for now, keep the CSS in sync with
+   those consumers. All rules below are reproduced verbatim from
+   abe1c73~1:apps/frontend/src/styles/index.css (lines 591-1760,
+   2038-2304) unless otherwise noted.
+   ═══════════════════════════════════════════════════════════════ */
+@layer components {
+  /* ── Stub: custom-scrollbar (used by admin sidebar / timeline tab) ── */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--border-rgb)) transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(var(--border-rgb));
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--accent-rgb) / 0.40);
+  }
+
+  /* ── Stub: admin-form (single usage in AdminCoursesPage; card chrome handled by other utilities) ── */
+  .admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* ═════════════════════════════════════════════════════════════
+     .btn-cta — "Ask the Community" style button
+     ═════════════════════════════════════════════════════════════ */
+  .btn-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background-color: rgb(var(--text-primary-rgb));
+    color: rgb(var(--accent-text-rgb));
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    transition: background-color 0.2s ease,
+                border-color 0.2s ease,
+                color 0.2s ease,
+                box-shadow 0.2s ease,
+                transform 0.1s ease;
+    cursor: pointer;
+  }
+  .btn-cta:hover {
+    opacity: 0.88;
+  }
+  [data-theme="dark"] .btn-cta {
+    background-color: #191919;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #2A2A2A;
+    color: #F2F2F2;
+  }
+  [data-theme="dark"] .btn-cta:hover {
+    background-color: #202020;
+    border-color: rgb(var(--accent-rgb) / 0.40);
+    color: rgb(var(--accent-rgb));
+    box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.15);
+    opacity: 1;
+  }
+  [data-theme="dark"] .btn-cta:hover .btn-cta-icon {
+    color: rgb(var(--accent-rgb));
+    transform: translateX(2px);
+  }
+  [data-theme="dark"] .btn-cta:active {
+    background-color: #262626;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  }
+  .btn-cta-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease, color 0.2s ease;
+    color: rgb(var(--text-primary-rgb));
+  }
+
+  /* ═════════════════════════════════════════════════════════════
+     .search-overlay — premium glassmorphism backdrop
+     ═════════════════════════════════════════════════════════════ */
+  .search-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background-color: rgba(var(--text-primary-rgb) / 0.25);
+    transition: opacity 0.3s ease;
+  }
+  [data-theme="dark"] .search-overlay {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background-color: rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 0 80px rgb(var(--accent-rgb) / 0.04);
+  }
+
+  /* ═════════════════════════════════════════════════════════════
+     Ask in Community (No Results block)
+     ═════════════════════════════════════════════════════════════ */
+  .ask-community-container {
+    background-color: rgb(var(--bg-card-rgb));
+    border-color: rgb(var(--border-rgb));
+  }
+  .ask-community-container:hover {
+    background-color: rgb(var(--accent-rgb) / 0.10);
+    border-color: rgb(var(--accent-rgb) / 0.25);
+  }
+  .ask-community-title {
+    color: rgb(var(--text-primary-rgb));
+  }
+  .ask-community-icon {
+    color: rgb(var(--text-primary-rgb));
+  }
+  .ask-community-action {
+    color: rgb(var(--accent-rgb));
+  }
+  [data-theme="dark"] .ask-community-container {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.10);
+  }
+  [data-theme="dark"] .ask-community-container:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  [data-theme="dark"] .ask-community-title {
+    color: rgb(var(--text-primary-rgb));
+  }
+  [data-theme="dark"] .ask-community-icon {
+    color: rgb(var(--text-primary-rgb));
+  }
+  [data-theme="dark"] .ask-community-action {
+    color: rgb(var(--accent-rgb));
+  }
+
+  /* ═════════════════════════════════════════════════════════════
+     .search-popular-pill — enhanced popular search capsules
+     ═════════════════════════════════════════════════════════════ */
+  .search-popular-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 9999px;
+    border: 1px solid rgb(var(--border-rgb));
+    background-color: rgb(var(--bg-card-rgb));
+    color: rgb(var(--text-secondary-rgb));
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease,
+                border-color 0.2s ease,
+                color 0.2s ease;
+  }
+  .search-popular-pill:hover {
+    background-color: rgb(var(--accent-rgb) / 0.14);
+    border-color: rgb(var(--accent-rgb) / 0.30);
+    color: rgb(var(--accent-rgb));
+  }
+  .search-popular-pill:active {
+    background-color: rgb(var(--accent-rgb) / 0.18);
+  }
+  .search-popular-pill .search-popular-icon {
+    opacity: 0.5;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    color: inherit;
+  }
+  .search-popular-pill:hover .search-popular-icon {
+    opacity: 1;
+  }
+  .search-popular-badge {
+    margin-left: auto;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    background-color: rgb(var(--border-rgb) / 0.6);
+    color: rgb(var(--text-secondary-rgb));
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  [data-theme="dark"] .search-popular-pill {
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    color: rgb(var(--text-secondary-rgb));
+  }
+  [data-theme="dark"] .search-popular-pill:hover {
+    background-color: rgb(var(--accent-rgb) / 0.10);
+    border-color: rgb(var(--accent-rgb) / 0.30);
+    color: rgb(var(--accent-rgb));
+  }
+  [data-theme="dark"] .search-popular-pill:active {
+    background-color: rgb(var(--accent-rgb) / 0.18);
+  }
+  [data-theme="dark"] .search-popular-pill .search-popular-icon {
+    opacity: 0.4;
+  }
+  [data-theme="dark"] .search-popular-pill:hover .search-popular-icon {
+    opacity: 1;
+  }
+  [data-theme="dark"] .search-popular-badge {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #7A7A7A;
+  }
+
+  /* ═════════════════════════════════════════════════════════════
+     .faq-card-clay — Premium FAQ category cards
+     ═════════════════════════════════════════════════════════════ */
+  .faq-card-clay {
+    position: relative;
+    min-height: 300px;
+    border-radius: 16px;
+    padding: 26px;
+    border: 1px solid #E4DDD3;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(34, 34, 34, 0.04), 0 12px 32px rgba(34, 34, 34, 0.05);
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .faq-card-clay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.12), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .faq-card-clay:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(34, 34, 34, 0.06),
+                0 24px 48px rgba(34, 34, 34, 0.08),
+                0 0 0 1px rgb(var(--accent-rgb) / 0.14);
+    border-color: rgb(var(--accent-rgb) / 0.35);
+  }
+  .faq-card-clay:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.20),
+                0 8px 24px rgba(0, 0, 0, 0.04);
+  }
+  .faq-card-clay__badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .faq-card-clay__illustration {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    opacity: 0.80;
+    transform: rotate(-6deg) translateY(-2px);
+    pointer-events: none;
+    filter: drop-shadow(0 5px 10px rgba(34, 34, 34, 0.10))
+            saturate(0.80)
+            hue-rotate(var(--illu-hue, 0deg))
+            drop-shadow(0 0 8px var(--illu-glow, rgb(var(--accent-rgb) / 0.18)));
+    transition: opacity 0.25s ease,
+                filter 0.25s ease;
+    z-index: 0;
+  }
+  .faq-card-clay:hover .faq-card-clay__illustration {
+    opacity: 0.92;
+    filter: drop-shadow(0 6px 12px rgba(34, 34, 34, 0.12))
+            saturate(0.88)
+            hue-rotate(var(--illu-hue, 0deg))
+            drop-shadow(0 0 10px var(--illu-glow, rgb(var(--accent-rgb) / 0.22)));
+  }
+  .faq-card-clay__count {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background-color: #FCFAF8;
+    color: #555555;
+    letter-spacing: 0.01em;
+    position: relative;
+    z-index: 1;
+  }
+  .faq-card-clay__title {
+    margin-top: 20px;
+    font-size: 16px;
+    font-weight: 650;
+    color: #222222;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    position: relative;
+    z-index: 1;
+    transition: color 0.2s ease;
+  }
+  .faq-card-clay__desc {
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #555555;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+  .faq-card-clay__questions-divider {
+    margin-top: 16px;
+    border: none;
+    border-top: 1px solid #E4DDD3;
+    position: relative;
+    z-index: 1;
+  }
+  .faq-card-clay__questions-label {
+    margin-top: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8B8B8B;
+    position: relative;
+    z-index: 1;
+  }
+  .faq-card-clay__questions-list {
+    margin-top: 8px;
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+  }
+  .faq-card-clay__questions-list li {
+    font-size: 12.5px;
+    color: #555555;
+    line-height: 1.45;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.65;
+    transition: color 0.25s ease, opacity 0.25s ease;
+  }
+  .faq-card-clay__cta {
+    margin-top: auto;
+    padding-top: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+    z-index: 1;
+    transition: gap 0.25s ease, color 0.25s ease;
+  }
+  .faq-card-clay__cta svg {
+    transition: transform 0.25s ease;
+  }
+  .faq-card-clay:hover .faq-card-clay__cta svg {
+    transform: translateX(2px);
+  }
+  .faq-card-clay:hover .faq-card-clay__title {
+    color: #111111;
+  }
+  .faq-card-clay:hover .faq-card-clay__questions-list li {
+    color: #333333;
+    opacity: 0.9;
+  }
+  [data-theme="dark"] .faq-card-clay {
+    background: rgba(255, 255, 255, 0.055);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgb(var(--accent-rgb) / 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  }
+  [data-theme="dark"] .faq-card-clay__count {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.38);
+  }
+  [data-theme="dark"] .faq-card-clay__title {
+    color: #F2F2F2;
+  }
+  [data-theme="dark"] .faq-card-clay__desc {
+    color: #B8B8B8;
+  }
+  [data-theme="dark"] .faq-card-clay__questions-divider {
+    border-top-color: rgba(255, 255, 255, 0.035);
+  }
+  [data-theme="dark"] .faq-card-clay__questions-label {
+    color: rgba(255, 255, 255, 0.20);
+  }
+  [data-theme="dark"] .faq-card-clay__questions-list li {
+    color: #7A7A7A;
+    opacity: 0.65;
+  }
+
+  /* ═════════════════════════════════════════════════════════════
+     .faq-sort-bar + .faq-item — Accordion FAQ category detail
+     ═════════════════════════════════════════════════════════════ */
+  .faq-sort-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+  .faq-sort-bar__count {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.40);
+    letter-spacing: 0.01em;
+  }
+  .faq-sort-bar__select {
+    border-radius: 9999px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+    padding: 5px 14px;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+  }
+  .faq-sort-bar__select:focus {
+    outline: none;
+    border-color: rgb(var(--accent-rgb) / 0.45);
+  }
+  [data-theme="dark"] .faq-sort-bar__count {
+    color: rgba(255, 255, 255, 0.35);
+  }
+  [data-theme="dark"] .faq-sort-bar__select {
+    background: #131313;
+    border-color: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .faq-item {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-left: 2px solid transparent;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04),
+                0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+  .faq-item:hover {
+    transform: translateY(-1px);
+    background: #f9fafb;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07),
+                0 2px 4px rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+  }
+  .faq-item--expanded {
+    background: #f9fafb;
+    border-left-color: rgb(var(--accent-rgb) / 0.55);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06),
+                0 2px 6px rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.07);
+  }
+  .faq-item--expanded:hover {
+    transform: none;
+  }
+  .faq-item__question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    -webkit-user-select: none;
+    user-select: none;
+    padding: 16px 20px;
+  }
+  .faq-item__question-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1.5;
+    letter-spacing: -0.005em;
+    flex: 1;
+    min-width: 0;
+  }
+  .faq-item__chevron {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: rgba(0, 0, 0, 0.20);
+    opacity: 0.6;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.2s ease,
+                opacity 0.2s ease;
+  }
+  .faq-item:hover .faq-item__chevron {
+    color: rgba(0, 0, 0, 0.40);
+    opacity: 1;
+  }
+  .faq-item--expanded .faq-item__chevron {
+    transform: rotate(180deg);
+    color: rgb(var(--accent-rgb));
+    opacity: 1;
+  }
+  .faq-item__body {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.2s ease 0.05s;
+    position: relative;
+    z-index: 1;
+  }
+  .faq-item--expanded .faq-item__body {
+    max-height: 1200px;
+    opacity: 1;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.25s ease 0.08s;
+  }
+  .faq-item__body-content {
+    padding: 0 20px 20px 20px;
+  }
+  .faq-item__answer {
+    margin-top: 0;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 14px;
+    line-height: 1.7;
+    color: #4b5563;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .faq-item__meta {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.35);
+  }
+  .faq-item__meta-pill {
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  [data-theme="dark"] .faq-item {
+    background: #202020;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 2px solid transparent;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  }
+  [data-theme="dark"] .faq-item:hover {
+    background: rgb(var(--accent-rgb) / 0.04);
+    border-color: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  }
+  [data-theme="dark"] .faq-item--expanded {
+    background: #262626;
+    border-left-color: rgb(var(--accent-rgb) / 0.50);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55),
+                inset 0 0 20px rgb(var(--accent-rgb) / 0.04);
+  }
+  [data-theme="dark"] .faq-item--expanded:hover {
+    transform: none;
+    background: #262626;
+  }
+  [data-theme="dark"] .faq-item__question-text {
+    color: #F2F2F2;
+  }
+  [data-theme="dark"] .faq-item__chevron {
+    color: rgba(255, 255, 255, 0.18);
+  }
+  [data-theme="dark"] .faq-item:hover .faq-item__chevron {
+    color: rgba(255, 255, 255, 0.40);
+  }
+  [data-theme="dark"] .faq-item--expanded .faq-item__chevron {
+    color: rgb(var(--accent-rgb));
+  }
+  [data-theme="dark"] .faq-item__answer {
+    color: #9ca3af;
+    border-top-color: rgba(255, 255, 255, 0.05);
+  }
+  [data-theme="dark"] .faq-item__meta {
+    color: rgba(255, 255, 255, 0.28);
+  }
+  [data-theme="dark"] .faq-item__meta-pill {
+    background: rgba(255, 255, 255, 0.07);
+    color: #d1d5db;
+  }
+
+  /* ═════════════════════════════════════════════════════════════
+     .dialog-shell / .dialog-panel / .dialog-scroll
+     Responsive dialog container, surface, and content scroller.
+     ═════════════════════════════════════════════════════════════ */
+  .dialog-shell {
+    /* Center both axes */
+    place-items: center;
+    align-items: center;
+    /* Full viewport base */
+    width: 100%;
+    height: 100%;
+    /* Spacing from screen edges on small viewports.
+       padding-top reserves space for the floating navbar (fixed top-4,
+       h-16 ≈ 80px) so a centered dialog never sits underneath it. */
+    padding: 8px;
+    padding-top: calc(8px + 5rem);          /* ≈80px desktop */
+  }
+  @media (max-height: 700px), (max-width: 640px) {
+    .dialog-shell {
+      padding: 0;
+      padding-top: 4rem;                    /* ≈64px mobile */
+      height: 100dvh;
+    }
+  }
+  .dialog-panel {
+    /* Base: fills shell (which is viewport-sized) with max caps */
+    width: 100%;
+    max-height: 100%;
+    /* Size cap + horizontal centering — shell's place-items handles vertical */
+    max-width: 42rem;         /* ~672px — same as max-w-2xl */
+    /* Internal flex layout */
+    display: flex;
+    flex-direction: column;
+    /* Card styling (no conflicting maxHeight inline needed) */
+    m-auto: unset;
+    /* Override any UA dialog centering — we handle it ourselves */
+    position: static;
+    margin: 0;
+  }
+  @media (max-width: 640px) {
+    .dialog-panel {
+      max-width: 100%;
+    }
+  }
+  @media (min-width: 641px) and (max-width: 900px) {
+    .dialog-panel {
+      max-width: 36rem; /* max-w-3xl */
+    }
+  }
+  @media (max-height: 700px), (max-width: 640px) {
+    .dialog-panel {
+      max-height: 100dvh;
+      border-radius: 0;
+    }
+  }
+  @media (min-width: 641px) and (min-height: 701px) {
+    .dialog-panel {
+      max-height: 85vh;
+      border-radius: 1rem; /* rounded-2xl */
+    }
+  }
+  .dialog-scroll {
+    overflow-y: auto;
+    flex: 1 1 0;
+    min-height: 0; /* required for flex children to shrink below content size */
+  }
+
+  /* ═════════════════════════════════════════════════════════════
+     .doodle-underline — hero heading decoration
+     ═════════════════════════════════════════════════════════════ */
+  .doodle-underline {
+    position: relative;
+    display: inline-block;
+  }
+  .doodle-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='8'%3E%3Cpath d='M0 6 Q30 0 60 6 Q90 12 120 6' stroke='%23D6B78F' stroke-width='2' fill='none' opacity='0.55'/%3E%3C/svg%3E") repeat-x;
+    background-size: 120px 8px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ADMIN PANEL — Reusable dark-mode-ready component classes
+   All classes use theme CSS variables so they auto-adapt to
+   both light and dark modes without any dark: prefix juggling.
+   Reproduced verbatim from abe1c73~1 — please see commit if you
+   intend to migrate these to Tailwind utilities / style_config.
+   ══════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* ── Table structures ─────────────────────────────────────────── */
+  .admin-table-wrap {
+    @apply bg-card border border-border rounded-xl overflow-hidden;
+  }
+  .admin-thead-row {
+    @apply bg-mist border-b border-border;
+  }
+  .admin-th {
+    @apply px-3 py-2.5 text-left text-[10px] font-semibold text-ink-faint uppercase tracking-widest whitespace-nowrap;
+  }
+  .admin-td {
+    @apply px-3 py-3 text-sm text-ink;
+  }
+  .admin-tr {
+    @apply border-b border-border/50 last:border-0 hover:bg-mist transition-colors;
+  }
+
+  /* ── Card surfaces ────────────────────────────────────────────── */
+  .admin-card-surface {
+    @apply bg-card border border-border rounded-xl overflow-hidden;
+  }
+  .admin-card-header {
+    @apply px-4 py-3 border-b border-border;
+  }
+  .admin-stat-mini {
+    @apply bg-bg-secondary border border-border rounded-lg;
+  }
+
+  /* ── Form controls ────────────────────────────────────────────── */
+  .admin-input {
+    @apply w-full px-3 py-2 rounded-md text-sm text-ink bg-bg-secondary border border-border outline-none focus:border-accent transition-colors;
+    &::placeholder { color: rgb(var(--text-muted-rgb)); }
+  }
+  .admin-textarea {
+    @apply w-full px-3 py-2 rounded-md text-sm text-ink bg-bg-secondary border border-border outline-none focus:border-accent transition-colors resize-none;
+    &::placeholder { color: rgb(var(--text-muted-rgb)); }
+  }
+  .admin-select {
+    @apply px-2.5 py-1.5 rounded-md text-sm text-ink bg-bg-secondary border border-border outline-none focus:border-accent transition-colors;
+  }
+  .admin-search-input {
+    @apply w-full pl-8 pr-3 py-1.5 rounded-md text-sm text-ink bg-bg-secondary border border-border outline-none focus:border-accent transition-colors;
+    &::placeholder { color: rgb(var(--text-muted-rgb)); }
+  }
+  .admin-label {
+    @apply block text-xs font-medium text-ink-soft mb-1;
+  }
+
+  /* ── Modal structures ─────────────────────────────────────────── */
+  .admin-modal-panel {
+    background: var(--modal-bg);
+    border: 1px solid var(--modal-border);
+    @apply rounded-xl shadow-float;
+  }
+  .admin-modal-header {
+    border-bottom: 1px solid var(--modal-border);
+    @apply px-5 py-4 flex items-center justify-between;
+  }
+  .admin-modal-body {
+    @apply px-5 py-4;
+  }
+  .admin-modal-footer {
+    border-top: 1px solid var(--modal-border);
+    @apply px-5 py-4 flex flex-wrap gap-2;
+  }
+
+  /* ── Pagination ───────────────────────────────────────────────── */
+  .admin-pagination {
+    @apply flex items-center justify-between px-4 py-3 border-t border-border text-sm text-ink-faint;
+  }
+  .admin-pagination-btn {
+    @apply px-3 py-1 rounded-md text-sm text-ink-soft hover:bg-mist disabled:opacity-30 transition-colors;
+  }
+
+  /* ── Empty state ──────────────────────────────────────────────── */
+  .admin-empty {
+    @apply py-12 text-center text-sm text-ink-faint;
+  }
+
+  /* ── Buttons ──────────────────────────────────────────────────── */
+  .admin-btn-primary {
+    @apply px-4 py-2 rounded-md text-sm font-medium disabled:opacity-40 transition-colors;
+    background: rgb(var(--accent-rgb));
+    color: rgb(var(--accent-text-rgb));
+  }
+  .admin-btn-primary:hover:not(:disabled) {
+    background: rgb(var(--accent-hover-rgb));
+  }
+  .admin-btn-ghost {
+    @apply px-4 py-2 rounded-md text-sm text-ink-faint hover:text-ink hover:bg-mist transition-colors;
+  }
+  .admin-btn-outline {
+    @apply px-4 py-2 rounded-md text-sm border border-border text-ink-soft hover:bg-mist disabled:opacity-40 transition-colors;
+  }
+  .admin-btn-danger {
+    @apply px-4 py-2 rounded-md text-sm font-medium text-white bg-danger hover:bg-danger/80 disabled:opacity-40 transition-colors;
+  }
+  .admin-btn-warn {
+    @apply px-4 py-2 rounded-md text-sm font-medium text-white bg-warning hover:bg-warning/80 disabled:opacity-40 transition-colors;
+  }
+  .admin-btn-success {
+    @apply px-4 py-2 rounded-md text-sm font-medium text-white bg-success hover:bg-success/80 disabled:opacity-50 transition-colors;
+  }
+  .admin-btn-sm-outline {
+    @apply px-2.5 py-1 rounded-md text-[10px] border border-border text-ink-soft hover:border-border-medium hover:text-ink transition-colors;
+  }
+
+  /* ── Toast notifications ──────────────────────────────────────── */
+  .admin-toast-success {
+    @apply bg-success/10 border border-success/20 text-success;
+  }
+  .admin-toast-warn {
+    @apply bg-warning/10 border border-warning/20 text-warning;
+  }
+  .admin-toast-error {
+    @apply bg-danger/10 border border-danger/20 text-danger;
+  }
+
+  /* ── Tab bar ──────────────────────────────────────────────────── */
+  .admin-tab-bar {
+    @apply flex rounded-lg border border-border overflow-hidden text-xs font-medium shrink-0;
+  }
+  .admin-tab {
+    @apply px-4 py-2 transition-colors text-ink-soft hover:bg-mist;
+  }
+  .admin-tab-active {
+    background: rgb(var(--accent-rgb));
+    color: rgb(var(--accent-text-rgb));
+  }
+
+  /* ── Status badge base ────────────────────────────────────────── */
+  .admin-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium border;
+  }
+  .admin-badge-approved {
+    background: var(--tag-high-bg);
+    color: var(--tag-high-text);
+    border-color: var(--tag-high-bg);
+  }
+  .admin-badge-pending {
+    background: var(--tag-medium-bg);
+    color: var(--tag-medium-text);
+    border-color: var(--tag-medium-bg);
+  }
+  .admin-badge-rejected {
+    background: var(--danger-bg);
+    color: rgb(var(--danger-rgb));
+    border-color: var(--danger-bg);
+  }
+  .admin-badge-admin {
+    background: rgb(var(--accent-rgb) / 0.20);
+    color: rgb(var(--accent-rgb));
+    border-color: rgb(var(--accent-rgb) / 0.45);
+  }
+  .admin-badge-moderator {
+    background: rgb(var(--accent-rgb) / 0.12);
+    color: rgb(var(--accent-hover-rgb));
+    border-color: rgb(var(--accent-rgb) / 0.30);
+  }
+  .admin-badge-user {
+    background: rgb(var(--accent-rgb) / 0.08);
+    color: rgb(var(--accent-hover-rgb));
+    border-color: rgb(var(--accent-rgb) / 0.20);
+  }
+  .admin-badge-default {
+    background: rgba(var(--border-rgb) / 0.4);
+    color: rgb(var(--text-muted-rgb));
+    border-color: rgba(var(--border-rgb) / 0.6);
+  }
+
+  /* Light-mode badge overrides — richer tints on white backgrounds */
+  :root .admin-badge-approved { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+  :root .admin-badge-pending  { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+  :root .admin-badge-rejected { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  :root .admin-badge-admin    { background: rgb(var(--accent-rgb) / 0.20); color: #6B5436; border-color: rgb(var(--accent-rgb) / 0.45); }
+  :root .admin-badge-moderator{ background: rgb(var(--accent-rgb) / 0.12); color: #8A6B43; border-color: rgb(var(--accent-rgb) / 0.30); }
+  :root .admin-badge-user     { background: rgb(var(--accent-rgb) / 0.08); color: rgb(var(--accent-rgb)); border-color: rgb(var(--accent-rgb) / 0.20); }
+  :root .admin-badge-default  { background: #f9fafb; color: #374151; border-color: #e5e7eb; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    Responsive Utilities
    ═══════════════════════════════════════════════════════════════ */
 .scrollbar-hide {

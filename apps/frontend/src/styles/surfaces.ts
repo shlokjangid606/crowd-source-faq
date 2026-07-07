@@ -5,7 +5,7 @@
 
 export const surfaceCard        = 'bg-card border border-border rounded-xl';
 export const surfaceCardFlat   = 'bg-card';
-export const surfaceCardHover  = 'bg-card hover:bg-card-hover border border-border rounded-xl';
+export const surfaceCardHover  = 'bg-card hover:bg-card-hover border border-border rounded-xl p-5 transition-colors';
 export const surfaceCardPadded = 'bg-card border border-border rounded-xl p-5';
 export const surfaceCardInline = 'bg-card border border-border rounded-2xl p-4';
 
