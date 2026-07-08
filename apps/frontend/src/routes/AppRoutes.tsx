@@ -58,9 +58,14 @@ const AdminSettings = lazy(() => import('../admin/pages/AdminSettings'));
 const AdminCommunity = lazy(() => import('../admin/pages/AdminCommunity'));
 const AdminModeration = lazy(() => import('../admin/pages/AdminModeration'));
 const AdminUnresolvedSearch = lazy(() => import('../admin/pages/AdminUnresolvedSearch'));
-const AdminZoomMeetings = lazy(() => import('../admin/pages/AdminZoomMeetings'));
-const AdminZoomInsights = lazy(() => import('../admin/pages/AdminZoomInsights'));
-const AdminDocumentInsights = lazy(() => import('../admin/pages/AdminDocumentInsights'));
+// v1.83 — AdminZoomMeetings / AdminZoomInsights / AdminDocumentInsights /
+// AdminContextSources are now embedded as named views inside the
+// unified AdminKnowledge tab page. Their default exports remain so
+// the lazy imports still type-check (and any stray direct imports
+// keep working), but the corresponding top-level routes now
+// `<Navigate>` to `/admin/knowledge?tab=...`.
+
+const AdminKnowledge = lazy(() => import('../admin/pages/AdminKnowledge'));
 const AdminAISettings = lazy(() => import('../admin/pages/AdminAISettings'));
 const AdminApiLogsPage = lazy(() => import('../admin/pages/AdminApiLogsPage'));
 const FaqReview = lazy(() => import('../admin/pages/FaqReview'));
@@ -85,7 +90,6 @@ const AdminWelcomePage = lazy(() => import('../admin/pages/AdminWelcomePage'));
 const AdminZoomAssessmentsPage = lazy(() => import('../admin/pages/AdminZoomAssessmentsPage'));
 const AdminZoomQuestionsPage = lazy(() => import('../admin/pages/AdminZoomQuestionsPage'));
 const AdminProjectsPage = lazy(() => import('../admin/pages/AdminProjectsPage'));
-const AdminContextSources = lazy(() => import('../admin/pages/AdminContextSources'));
 const AdminTrain = lazy(() => import('../admin/pages/AdminTrain'));
 const AdminSupportLayout = lazy(() => import('../admin/components/layout/AdminSupportLayout'));
 const AdminLayout = lazy(() => import('../admin/components/layout/AdminLayout'));
@@ -193,9 +197,13 @@ export default function AppRoutes() {
           <Route path="/admin/community" element={<RouteElement name="admin-community"><AdminRoute><AdminLayout><AdminCommunity /></AdminLayout></AdminRoute></RouteElement>} />
           <Route path="/admin/moderation" element={<RouteElement name="admin-moderation"><AdminRoute><AdminLayout><AdminModeration /></AdminLayout></AdminRoute></RouteElement>} />
           <Route path="/admin/unresolved-search" element={<RouteElement name="admin-unresolved-search"><AdminRoute><AdminLayout><AdminUnresolvedSearch /></AdminLayout></AdminRoute></RouteElement>} />
-           <Route path="/admin/zoom-meetings" element={<RouteElement name="admin-zoom-meetings"><AdminRoute><AdminLayout><AdminZoomMeetings /></AdminLayout></AdminRoute></RouteElement>} />
-          <Route path="/admin/zoom-insights" element={<RouteElement name="admin-zoom-insights"><AdminRoute><AdminLayout><AdminZoomInsights /></AdminLayout></AdminRoute></RouteElement>} />
-          <Route path="/admin/document-insights" element={<RouteElement name="admin-document-insights"><AdminRoute><AdminLayout><FeatureGate featureKey="documentPipeline" featureLabel="Document Pipeline"><AdminDocumentInsights /></FeatureGate></AdminLayout></AdminRoute></RouteElement>} />
+           <Route path="/admin/zoom-meetings" element={<RouteElement name="admin-zoom-meetings"><AdminRoute><AdminLayout><Navigate to="/admin/knowledge?tab=zoom" replace /></AdminLayout></AdminRoute></RouteElement>} />
+          <Route path="/admin/zoom-insights" element={<RouteElement name="admin-zoom-insights"><AdminRoute><AdminLayout><Navigate to="/admin/knowledge?tab=zoom-insights" replace /></AdminLayout></AdminRoute></RouteElement>} />
+          <Route path="/admin/document-insights" element={<RouteElement name="admin-document-insights"><AdminRoute><AdminLayout><FeatureGate featureKey="documentPipeline" featureLabel="Document Pipeline"><Navigate to="/admin/knowledge?tab=doc-insights" replace /></FeatureGate></AdminLayout></AdminRoute></RouteElement>} />
+          {/* Unified knowledge page (v1.83) — single entry point for
+            * Context Sources + Zoom Meetings + Zoom + Document Insights.
+            * Old routes still resolve here via <Navigate> redirects below. */}
+          <Route path="/admin/knowledge" element={<RouteElement name="admin-knowledge"><AdminRoute><AdminLayout><AdminKnowledge /></AdminLayout></AdminRoute></RouteElement>} />
           <Route path="/admin/settings/ai" element={<RouteElement name="admin-settings-ai"><AdminRoute><AdminLayout><AdminAISettings /></AdminLayout></AdminRoute></RouteElement>} />
           <Route path="/admin/ai-logs" element={<RouteElement name="admin-ai-logs"><AdminRoute><AdminLayout><AdminApiLogsPage /></AdminLayout></AdminRoute></RouteElement>} />
           <Route path="/admin/faqs/review" element={<RouteElement name="admin-faqs-review"><AdminRoute><AdminLayout><FeatureGate featureKey="faqFreshness" featureLabel="FAQ Freshness Review"><FaqReview /></FeatureGate></AdminLayout></AdminRoute></RouteElement>} />
@@ -203,7 +211,7 @@ export default function AppRoutes() {
           <Route path="/admin/zoom" element={<RouteElement name="admin-zoom"><AdminRoute><AdminLayout><AdminZoomAssessmentsPage /></AdminLayout></AdminRoute></RouteElement>} />
           <Route path="/admin/zoom/questions" element={<RouteElement name="admin-zoom-questions"><AdminRoute><AdminLayout><AdminZoomQuestionsPage /></AdminLayout></AdminRoute></RouteElement>} />
           <Route path="/admin/projects" element={<RouteElement name="admin-projects"><AdminRoute><AdminLayout><AdminProjectsPage /></AdminLayout></AdminRoute></RouteElement>} />
-          <Route path="/admin/context-sources" element={<RouteElement name="admin-context-sources"><AdminRoute><AdminLayout><AdminContextSources /></AdminLayout></AdminRoute></RouteElement>} />
+          <Route path="/admin/context-sources" element={<RouteElement name="admin-context-sources"><AdminRoute><AdminLayout><Navigate to="/admin/knowledge?tab=upload" replace /></AdminLayout></AdminRoute></RouteElement>} />
           <Route path="/admin/train" element={<RouteElement name="admin-train"><AdminRoute><AdminLayout><AdminTrain /></AdminLayout></AdminRoute></RouteElement>} />
           <Route path="/admin/auto-answer" element={<RouteElement name="admin-auto-answer"><AdminRoute><AdminLayout><FeatureGate featureKey="aiAutoAnswer" featureLabel="AI Auto-Answer"><AdminAutoAnswerQueue /></FeatureGate></AdminLayout></AdminRoute></RouteElement>} />
           <Route path="/admin/faq-audit" element={<RouteElement name="admin-faq-audit"><AdminRoute><AdminLayout><FeatureGate featureKey="faqFreshness" featureLabel="FAQ Freshness Audit"><AdminFAQAudit /></FeatureGate></AdminLayout></AdminRoute></RouteElement>} />

@@ -98,7 +98,11 @@ function InsightCardSkeleton() {
   );
 }
 
-export default function AdminDocumentInsights() {
+/**
+ * Named export — the inner tab content. Re-used by the unified
+ * `/admin/knowledge` tab page.
+ */
+export function DocumentInsightsView() {
   const [insights, setInsights] = useState<DocumentInsight[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -317,4 +321,14 @@ export default function AdminDocumentInsights() {
       )}
     </div>
   );
+}
+
+/**
+ * Default export kept for the legacy `/admin/document-insights`
+ * route — thin wrapper that mounts the named inner view. After
+ * `/admin/knowledge` lands and bookmarks/links settle, this can
+ * be deleted and the route can be removed.
+ */
+export default function AdminDocumentInsights() {
+  return <DocumentInsightsView />;
 }
