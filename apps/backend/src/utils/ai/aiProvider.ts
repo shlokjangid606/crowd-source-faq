@@ -23,9 +23,36 @@ import { logger } from '../http/logger.js';
 // Names of supported AI vendors/providers (used throughout the backend).
 export type AIProvider = 'anthropic' | 'openai' | 'xai' | 'minimax' | 'gemini' | 'custom';
 
+// AI_KEYS_FROM_DB_ONLY (set in .env / .env.local) — when truthy, every AI
+// provider resolver below treats process.env.{VENDOR}_API_KEY as if it
+// were unset. The AiConfig document in MongoDB becomes the *only* source
+// of API keys. Useful for proving the Mongo round-trip end-to-end, and
+// for production deploys where the env-var fallback is considered a
+// footgun (e.g. multiple deploys sharing one .env but different DB rows).
+// Off by default — current behaviour preserved.
+export const AI_KEYS_FROM_DB_ONLY =
+  ['1', 'true', 'yes', 'on'].includes(
+    (process.env.AI_KEYS_FROM_DB_ONLY ?? '').toLowerCase()
+  );
+
+/** Read the env-var key for a provider, unless DB-only mode is on. */
+function envKey(p: AIProvider): string {
+  if (AI_KEYS_FROM_DB_ONLY) return '';
+  return process.env[ENV_KEY[p]] ?? '';
+}
+
 /**
- * Optional env var overrides per pipeline.
- * If set, they force which provider/model to use for that pipeline.
+ * v1.80 — Two override surfaces per pipeline:
+ *   (a) explicit env-var overrides (force mode — useful for staging canaries)
+ *   (b) per-feature overrides from the admin AiConfig doc, resolved
+ *       by `resolveFeatureModel()` below. The admin's per-feature
+ *       model field on the AiConfig (e.g. features.categoryRecategorize.model)
+ *       is the primary override path; the env var is the escape hatch.
+ *
+ * Pipeline name → env var name. Pipeline names match the keys of
+ * AiConfig['features'] plus two pipeline-only names (faq_audit,
+ * auto_answer) that don't have an AiConfig entry — those still use
+ * the env var.
  */
 export const PIPELINE_PROVIDER_KEY: Record<string, string> = {
   faq_audit: process.env.FAQ_AUDIT_PROVIDER ?? '',
@@ -37,6 +64,82 @@ export const PIPELINE_MODEL_KEY: Record<string, string> = {
 };
 
 /**
+ * v1.80 — Resolution chain for the model a pipeline uses:
+ *   1. env PIPELINE_MODEL_KEY[pipeline]  (admin/ops force-mode escape hatch)
+ *   2. db[provider].model                                  (admin's per-provider saved override)
+ *   3. process.env.{PROVIDER}_MODEL                        (legacy env-var fallback)
+ *   4. DEFAULT_MODELS[provider]                            (last-ditch default)
+ *
+ * Steps 2→3→4 only run if step 1 is empty. Step 2 is what the
+ * `Admin → AI Settings → Default Model` field on each provider card
+ * writes via the AiConfig.providers.{provider}.model path.
+ *
+ * The previous implementation went 1→3→4 (env var then default),
+ * which silently dropped the admin's saved model. Cron-triggered
+ * calls (autoAnswer, categoryRecategorize, faqAudit, embedding-warm,
+ * etc.) routed through this function and therefore used the env-var
+ * model regardless of what the admin had set in the dashboard.
+ */
+async function resolvePipelineModelAsync(
+  pipeline: string,
+  provider: AIProvider,
+  dbOverrideForProvider?: string,
+): Promise<string> {
+  const override = PIPELINE_MODEL_KEY[pipeline];
+  if (override) return override;
+  if (dbOverrideForProvider && dbOverrideForProvider.trim().length > 0) {
+    return dbOverrideForProvider;
+  }
+  return envModel(provider);
+}
+/**
+ * v1.80 — Async resolver that consults the admin's saved per-provider
+ * model. Cron callers should use this instead of the sync
+ * resolvePipelineModel. Returns the env-var model name when nothing
+ * is saved in the DB.
+ */
+export async function resolvePipelineModelWithDb(
+  pipeline: string,
+  provider: AIProvider,
+  dbOverrideForProvider?: string,
+): Promise<string> {
+  return resolvePipelineModelAsync(pipeline, provider, dbOverrideForProvider);
+}
+
+/**
+ * v1.80 — Resolve the per-feature model from the active AiConfig doc.
+ *
+ * Used by `getPipelineProviderConfig` to surface the admin's
+ * per-feature override (Admin → AI Settings → Feature Configuration
+ * → Model). Pipeline name matches the keys of `AiConfig['features']`
+ * (duplicateDetection, knowledgeExtraction, searchSummarization,
+ * faqGeneration) plus cron-only names (faq_audit, auto_answer).
+ *
+ * Order:
+ *   1. explicit per-feature model override (admin set this in dashboard)
+ *   2. empty / blank → caller should chain into resolvePipelineModelAsync
+ */
+export async function resolveFeatureModel(
+  pipeline: string,
+  batchId: string | null = null,
+): Promise<string> {
+  try {
+    const db = await resolveActiveAiConfig(batchId);
+    if (!db) return '';
+    // Look up features.{pipeline} for the four chat-feature pipelines.
+    // For faq_audit / auto_answer there's no feature entry — caller
+    // will fall through to env var.
+    const all: Record<string, { model?: string } | undefined> = ((db as any).features) ?? {};
+    const featureConf = all[pipeline];
+    const m = featureConf?.model;
+    if (m && m.trim().length > 0) return m;
+  } catch (err) {
+    logger.warn(`[resolveFeatureModel] db lookup failed for ${pipeline}: ${(err as Error).message}`);
+  }
+  return '';
+}
+
+/**
  * Resolve effective AIProvider for a pipeline.
  * Checks PIPELINE_PROVIDER_KEY first, then falls back to DEFAULT_PROVIDER.
  */
@@ -44,6 +147,13 @@ export function resolvePipelineProvider(pipeline: string): AIProvider {
   const override = PIPELINE_PROVIDER_KEY[pipeline] as AIProvider | '';
   if (override && isValidProvider(override)) return override;
   // Fall back to the first provider that has an API key configured
+  if (AI_KEYS_FROM_DB_ONLY) {
+    // DB-only mode: caller should use resolveProviderForPipeline (async) —
+    // it has the per-batchId AiConfig doc. This sync path has no DB access,
+    // so the only honest answer here is "no provider resolved" — the
+    // async resolver will pick the right one.
+    return 'minimax'; // will fail at chat() with a clean error if DB is empty
+  }
   if (process.env.ANTHROPIC_API_KEY) return 'anthropic';
   if (process.env.OPENAI_API_KEY) return 'openai';
   if (process.env.XAI_API_KEY) return 'xai';
@@ -107,7 +217,7 @@ export async function getPipelineProviderConfig(
   batchId: string | null = null
 ): Promise<ProviderConfig> {
   const db       = await resolveActiveAiConfig(batchId) ?? await loadDbOverrides();
-  const hasKey = (p: AIProvider) => !!(db[p].apiKey || process.env[ENV_KEY[p]]);
+  const hasKey = (p: AIProvider) => !!(db[p].apiKey || envKey(p));
 
   let provider: AIProvider;
   const override = PIPELINE_PROVIDER_KEY[pipeline] as AIProvider | '';
@@ -135,7 +245,25 @@ export async function getPipelineProviderConfig(
     }
   }
 
-  const model = resolvePipelineModel(pipeline, provider);
+  // v1.80 — model resolution chain. The key change: consult the
+  // admin's saved per-feature override FIRST, then per-provider,
+  // then env-var overrides. Previously this only looked at the
+  // env vars, silently dropping anything the admin set in the
+  // dashboard for cron-triggered pipelines.
+  //
+  // Precedence (first non-empty wins):
+  //   1. features.{pipeline}.model  — admin set this in dashboard for the specific feature
+  //   2. db[provider].model         — admin set this in the provider card "Default Model" field
+  //   3. PIPELINE_MODEL_KEY env     — ops force-mode override for the pipeline
+  //   4. {PROVIDER}_MODEL env       — legacy fallback
+  //   5. hard-coded DEFAULT_MODELS[provider]
+  //
+  // Steps 1+2 already handled by `resolveFeatureModel` and
+  // `resolvePipelineModelWithDb(dbOverrideForProvider)`.
+  const perFeatureModel = await resolveFeatureModel(pipeline, batchId);
+  const model = perFeatureModel
+    || await resolvePipelineModelWithDb(pipeline, provider, db[provider].model);
+
   const keyEnv = {
     anthropic: 'ANTHROPIC_API_KEY',
     openai: 'OPENAI_API_KEY',
@@ -144,10 +272,17 @@ export async function getPipelineProviderConfig(
     gemini: 'GEMINI_API_KEY',
     custom: 'CUSTOM_API_KEY'
   }[provider];
-  const apiKey = (db[provider].apiKey || process.env[keyEnv] || '') as string;
+  const apiKey = (db[provider].apiKey || envKey(provider) || '') as string;
   const baseURL = db[provider].baseURL || envBaseUrl(provider);
 
-  const resolvedModel = getModelForProvider(model, provider, db[provider].model);
+  // Sanity check: if the resolved model looks like it belongs to a
+  // different provider (legacy cross-model sanity guard), fall back
+  // to the admin-saved per-provider model, then env, then hard default.
+  const resolvedModel = getModelForProvider(
+    model || '',
+    provider,
+    db[provider].model || envModel(provider) || DEFAULT_MODELS[provider],
+  );
   if (!resolvedModel) {
     throw new Error(`No AI model configured for provider '${provider}' on pipeline '${pipeline}'. Please configure a model in Admin Settings.`);
   }
@@ -327,7 +462,7 @@ export function invalidateProviderCache(): void {
  */
 export async function resolveProviderAsync(provider?: AIProvider): Promise<ProviderConfig> {
   const db = await loadDbOverrides();
-  const hasKey = (p: AIProvider) => !!(db[p].apiKey || process.env[ENV_KEY[p]]);
+  const hasKey = (p: AIProvider) => !!(db[p].apiKey || envKey(p));
 
   let chosen: AIProvider;
   if (provider && hasKey(provider)) {
@@ -345,7 +480,7 @@ export async function resolveProviderAsync(provider?: AIProvider): Promise<Provi
   }
 
   const override = db[chosen];
-  const apiKey = override.apiKey || process.env[ENV_KEY[chosen]] || '';
+  const apiKey = override.apiKey || envKey(chosen) || '';
   const baseURL = (override.baseURL || process.env[ENV_BASE_URL[chosen]] || DEFAULT_BASE_URLS[chosen]).replace(/\/$/, '');
   const model = getModelForProvider(override.model || process.env[ENV_MODEL[chosen]] || DEFAULT_MODELS[chosen], chosen, override.model);
 
@@ -367,6 +502,15 @@ export async function resolveProviderAsync(provider?: AIProvider): Promise<Provi
  * and during initial module load. New code should prefer resolveProviderAsync().
  */
 export function resolveProvider(): ProviderConfig {
+  // AI_KEYS_FROM_DB_ONLY: this sync resolver can't read the DB. If the
+  // flag is on, refuse rather than return a config that contradicts the
+  // async resolver.
+  if (AI_KEYS_FROM_DB_ONLY) {
+    throw new Error(
+      'resolveProvider() called while AI_KEYS_FROM_DB_ONLY=true. ' +
+      'Use resolveProviderAsync() so the DB can be consulted.'
+    );
+  }
   if (process.env.ANTHROPIC_API_KEY) {
     return { ...PROVIDER_DEFAULTS.anthropic, provider: 'anthropic', apiKey: process.env.ANTHROPIC_API_KEY, baseURL: envBaseUrl('anthropic'), modelName: envModel('anthropic') };
   }
@@ -406,6 +550,13 @@ function envModel(p: AIProvider): string {
 /** Returns true if at least one AI API key is configured (env or DB). */
 export async function hasAIKeyAsync(): Promise<boolean> {
   const db = await loadDbOverrides();
+  if (AI_KEYS_FROM_DB_ONLY) {
+    // DB-only mode: only count keys that live in the AiConfig document.
+    return !!(
+      db.anthropic.apiKey || db.openai.apiKey || db.xai.apiKey ||
+      db.minimax.apiKey || db.gemini.apiKey || db.custom.apiKey
+    );
+  }
   return !!(
     db.anthropic.apiKey || process.env.ANTHROPIC_API_KEY ||
     db.openai.apiKey || process.env.OPENAI_API_KEY ||
@@ -418,6 +569,12 @@ export async function hasAIKeyAsync(): Promise<boolean> {
 
 /** Returns true if at least one AI API key is configured in env (sync). */
 export function hasAIKey(): boolean {
+  if (AI_KEYS_FROM_DB_ONLY) {
+    // DB-only mode: this sync function can't read the DB. Return false
+    // so any code that gates AI features on `hasAIKey()` correctly
+    // waits for an explicit DB read.
+    return false;
+  }
   return !!(
     process.env.ANTHROPIC_API_KEY ||
     process.env.OPENAI_API_KEY ||
@@ -457,10 +614,20 @@ export async function chatWithProvider(
   provider: AIProvider,
   messages: { role: string; content: string }[],
   model?: string,
+  // v1.80 — cron callers now pass the real pipeline name as the
+  // `feature` so AI API Logs page filter can show them grouped
+  // under the correct name (categoryRecategorize, auto_answer,
+  // faq_audit, embedding-warm) instead of the catch-all
+  // 'chatWithProvider'. Defaults to 'chatWithProvider' for any
+  // untagged caller.
+  feature: string = 'chatWithProvider',
 ): Promise<string> {
   const config = await resolveProviderAsync(provider);
   const modelName = model || config.modelName;
   const startedAt = Date.now();
+  // Tag is captured in a closure for the log helpers to consume
+  // without threading it through every catch block.
+  const logTag = { provider, modelName, feature, startedAt };
 
   if (provider === 'anthropic') {
     let res: Response;
@@ -479,7 +646,7 @@ export async function chatWithProvider(
         kind: 'inference',
         provider,
         modelName: modelName,
-        feature: 'chatWithProvider',
+        feature: logTag.feature,
         durationMs: Date.now() - startedAt,
         error: (err as Error).message,
       });
@@ -492,10 +659,11 @@ export async function chatWithProvider(
         kind: 'inference',
         provider,
         modelName: modelName,
-        feature: 'chatWithProvider',
+        feature: logTag.feature,
         durationMs: Date.now() - startedAt,
         error: wrapped.message,
         status: res.status,
+        requestBody: { model: modelName, messages },
       });
       throw wrapped;
     }
@@ -505,7 +673,7 @@ export async function chatWithProvider(
       kind: 'inference',
       provider,
       modelName: modelName,
-      feature: 'chatWithProvider',
+      feature: logTag.feature,
       durationMs: Date.now() - startedAt,
       httpStatus: res.status,
     });
@@ -513,7 +681,13 @@ export async function chatWithProvider(
   }
 
   // OpenAI / xAI / MiniMax all use chat completions
-  const body: Record<string, unknown> = { model: modelName, messages };
+  // v1.81 — custom provider can swap `model` → `modelName` via the
+  // CUSTOM_MODEL_FIELD env var (see ai-client.service.ts for the
+  // parallel toggle). Default stays `model`.
+  const customModelField = provider === 'custom'
+    ? (process.env.CUSTOM_MODEL_FIELD === 'modelName' ? 'modelName' : 'model')
+    : 'model';
+  const customBody = { [customModelField]: modelName, messages };
   let res: Response;
   try {
     res = await fetch(`${config.baseURL}/chat/completions`, {
@@ -522,14 +696,14 @@ export async function chatWithProvider(
         [config.authHeader]: `Bearer ${config.apiKey}`,
         'content-type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(customBody),
     });
   } catch (err) {
     logAiApiFailure({
       kind: 'inference',
       provider,
       modelName: modelName,
-      feature: 'chatWithProvider',
+      feature: logTag.feature,
       durationMs: Date.now() - startedAt,
       error: (err as Error).message,
     });
@@ -542,7 +716,7 @@ export async function chatWithProvider(
       kind: 'inference',
       provider,
       modelName: modelName,
-      feature: 'chatWithProvider',
+      feature: logTag.feature,
       durationMs: Date.now() - startedAt,
       error: wrapped.message,
       status: res.status,
@@ -555,7 +729,7 @@ export async function chatWithProvider(
     kind: 'inference',
     provider,
     modelName: modelName,
-    feature: 'chatWithProvider',
+    feature: logTag.feature,
     durationMs: Date.now() - startedAt,
     httpStatus: res.status,
   });
@@ -578,45 +752,119 @@ export const chat = chatWithProvider;
  * Back-office / admin call sites (extraction, audit, dedup) should NOT
  * add the persona — their task prompts stand alone.
  */
+// v1.80 — chatWithConfig now logs to the AiApiCall collection so
+// cron-driven pipelines (autoAnswer, faqAudit, documentAiPipeline,
+// ragService) show up in the AI API Logs observability page.
+// Defaults `feature` to 'chatWithConfig' for any caller that doesn't
+// pass one; cron controllers should pass their pipeline name.
 export async function chatWithConfig(
   config: ProviderConfig,
   messages: { role: string; content: string }[],
+  feature: string = 'chatWithConfig',
 ): Promise<string> {
   const { provider, baseURL, apiKey, modelName, authHeader, needsAnthropicVersion } = config;
   if (!apiKey) throw new Error(`No API key for provider '${provider}' — set ${provider.toUpperCase()}_API_KEY`);
+  const startedAt = Date.now();
 
   if (provider === 'anthropic') {
-    const res = await fetch(`${baseURL}/messages`, {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'content-type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        ...(needsAnthropicVersion ? { 'anthropic-version': '2023-06-01' } : {}),
-      },
-      body: JSON.stringify({ model: modelName, messages, max_tokens: 512 }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${baseURL}/messages`, {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'content-type': 'application/json',
+          'anthropic-version': '2023-06-01',
+          ...(needsAnthropicVersion ? { 'anthropic-version': '2023-06-01' } : {}),
+        },
+        body: JSON.stringify({ model: modelName, messages, max_tokens: 512 }),
+      });
+    } catch (err) {
+      logAiApiFailure({
+        kind: 'inference',
+        provider,
+        modelName,
+        feature,
+        durationMs: Date.now() - startedAt,
+        error: (err as Error).message,
+      });
+      throw err;
+    }
     if (!res.ok) {
       const err = await res.text();
+      logAiApiFailure({
+        kind: 'inference', provider, modelName, feature,
+        durationMs: Date.now() - startedAt,
+        error: `${provider} error: ${err}`, status: res.status,
+      });
       throw new Error(`${provider} error: ${err}`);
     }
-    const data = await res.json() as { content?: { text?: string }[] };
-    return data.content?.[0]?.text ?? '';
+    const data = (await res.json()) as { content?: { text?: string }[] };
+    const text = data.content?.[0]?.text ?? '';
+    logAiApiSuccess({
+      kind: 'inference', provider, modelName, feature,
+      durationMs: Date.now() - startedAt, httpStatus: res.status,
+      tokensUsed: 0, estimatedCostUsd: 0,
+    });
+    return text;
   }
 
   // OpenAI / xAI / MiniMax — all use chat/completions
-  const res = await fetch(`${baseURL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      [authHeader]: `Bearer ${apiKey}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({ model: modelName, messages }),
-  });
+  let res: Response;
+  // v1.81 — same model-field compatibility as the unified chat()
+  // path: admins running `custom` through an in-house proxy can
+  // flip CUSTOM_MODEL_FIELD=modelName to use camelCase. Default
+  // stays `model` (plain OpenAI-compat).
+  const customModelField = provider === 'custom'
+    ? (process.env.CUSTOM_MODEL_FIELD === 'modelName' ? 'modelName' : 'model')
+    : 'model';
+  const customBody = {
+    [customModelField]: modelName,
+    messages,
+  };
+  try {
+    res = await fetch(`${baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        [authHeader]: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(customBody),
+    });
+  } catch (err) {
+    logAiApiFailure({
+      kind: 'inference', provider, modelName, feature,
+      durationMs: Date.now() - startedAt,
+      error: (err as Error).message,
+    });
+    throw err;
+  }
   if (!res.ok) {
     const err = await res.text();
+    logAiApiFailure({
+      kind: 'inference', provider, modelName, feature,
+      durationMs: Date.now() - startedAt,
+      error: `${provider} error: ${err}`, status: res.status,
+      requestBody: customBody,
+    });
     throw new Error(`${provider} error: ${err}`);
   }
-  const data = await res.json() as { choices?: { message?: { content?: string } }[] };
-  return data.choices?.[0]?.message?.content ?? '';
+  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const text = data.choices?.[0]?.message?.content ?? '';
+  // v1.80 — pull token usage off the response for the OpenAI shape
+  // (works for minimax / xAI / openai / gemini / custom) so the
+  // log table can show real costs. Anthropic path already returned
+  // earlier; this block only runs for the OpenAI-compat branch.
+  const usage = (data as any).usage ?? {};
+  const COST_PER_M_TOKENS: Record<string, number> = {
+    openai: 0.15, xai: 5.0, minimax: 0.10, gemini: 0.075, custom: 0,
+  };
+  const totalTokens = Number(usage.total_tokens ?? 0);
+  logAiApiSuccess({
+    kind: 'inference', provider, modelName, feature,
+    durationMs: Date.now() - startedAt, httpStatus: res.status,
+    tokensUsed: totalTokens,
+    estimatedCostUsd: (totalTokens / 1_000_000) * (COST_PER_M_TOKENS[provider] ?? 0),
+  });
+  return text;
 }
