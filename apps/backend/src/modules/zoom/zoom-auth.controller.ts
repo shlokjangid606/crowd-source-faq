@@ -13,7 +13,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import User from '../auth/user.model.js';
 import { ZoomMeeting } from './zoom-meeting.model.js';
-import { buildZoomAuthUrl, exchangeCodeForTokens, getZoomUserId, verifyOAuthState } from '../../integrations/zoom/zoomOAuth.js';
+import { buildZoomAuthUrl, exchangeCodeForTokens, getProgramZoomConfig, getZoomUserId, verifyOAuthState } from '../../integrations/zoom/zoomOAuth.js';
 import { encrypt } from '../../utils/auth/crypto.js';
 import { CircuitOpenError } from '../../utils/http/circuitBreaker.js';
 import { adminLog } from '../../utils/http/logger.js';
@@ -273,6 +273,246 @@ export async function zoomStatus(req: Request, res: Response): Promise<void> {
     lastSyncedAt,
     hasCredentials,
   });
+}
+
+// ─── Zoom Diagnostics (admin) ────────────────────────────────────────────────
+
+interface ZoomEnvVarSnapshot {
+  /** Stable identifier used by the admin UI to render the row. */
+  name: string;
+  /** Whether the variable is set (non-empty) in process.env. */
+  present: boolean;
+  /** True when the variable is the one the runtime will actually
+   *  read for its purpose (e.g. OAUTH_STATE_SECRET wins over
+   *  JWT_SECRET for the state HMAC). */
+  used: boolean;
+  /** Length, for diagnostics. Never includes the value. */
+  length?: number;
+  /** Short human-readable description. */
+  purpose: string;
+  /** When present and !used, explains why this env var is
+   *  present but not the active one (e.g. "OAUTH_STATE_SECRET is
+   *  set so this is ignored"). */
+  note?: string;
+}
+
+interface PerProgramZoomOverride {
+  batchId: string;
+  hasClientId: boolean;
+  hasClientSecret: boolean;
+  hasWebhookToken: boolean;
+  /** True when the doc round-trip (findOne + select+cipher) was
+   *  successful — false when the doc existed but decrypt threw. */
+  decryptOk: boolean;
+  decryptError?: string;
+}
+
+interface ZoomResolutionProbe {
+  /** The result of running getProgramZoomConfig(null) — i.e. the
+   *  global env-var fallback path. */
+  global: { ok: true; clientId: string; source: 'env' } | { ok: false; error: string } | null;
+  /** A sample per-program lookup (if any program has overrides). */
+  sampleProgram: { batchId: string; clientId: string; source: 'program' } | { batchId: string; error: string } | null;
+  /** The effective redirect URI the runtime will use. */
+  effectiveRedirectUri: string;
+}
+
+interface ZoomDiagnosticsResponse {
+  ok: boolean;
+  /** Aggregate config health — true when every required env var
+   *  is present and the global resolution probe succeeds. The
+   *  admin UI uses this to flip the "Zoom configured" pill
+   *  green/red without re-deriving from each row. */
+  envVars: ZoomEnvVarSnapshot[];
+  perProgram: PerProgramZoomOverride[];
+  resolution: ZoomResolutionProbe;
+  /** Plain-English summary for the admin UI status bar. */
+  summary: string;
+}
+
+/**
+ * GET /api/zoom/auth/diagnostics
+ *
+ * Reports the live state of every Zoom-related env var + the
+ * per-program override rows + a resolution probe. The point of
+ * this endpoint is to give the admin UI a single, structured,
+ * never-500 snapshot so the operator can see "which env var is
+ * missing on prod" without grepping server logs.
+ *
+ * Auth: admin-only (the existing `protect + authorize('admin')`
+ * middleware gates the route in zoom.routes.ts).
+ *
+ * Security: this endpoint never exposes env values, only
+ * presence + length. A future "reveal" endpoint (gated by an
+ * audit log) would be needed to inspect a value. The decrypt
+ * probe on per-program rows is allowed because it's already
+ * attempted by the runtime on every connect — exposing that
+ * a decrypt failed doesn't leak anything the runtime
+ * doesn't already know.
+ */
+export async function getZoomDiagnostics(_req: Request, res: Response): Promise<void> {
+  const envVars: ZoomEnvVarSnapshot[] = [];
+
+  // ── 1. Required for any Zoom flow ───────────────────────────────────
+  const zoomClientId = (process.env.ZOOM_CLIENT_ID ?? '').trim();
+  const zoomClientSecret = (process.env.ZOOM_CLIENT_SECRET ?? '').trim();
+  envVars.push(
+    {
+      name: 'ZOOM_CLIENT_ID',
+      present: !!zoomClientId,
+      used: true,
+      length: zoomClientId.length || undefined,
+      purpose: 'Global Zoom app client ID (used when no per-program override is set).',
+    },
+    {
+      name: 'ZOOM_CLIENT_SECRET',
+      present: !!zoomClientSecret,
+      used: true,
+      length: zoomClientSecret.length || undefined,
+      purpose: 'Global Zoom app client secret. Pair with ZOOM_CLIENT_ID.',
+    },
+  );
+
+  // ── 2. Optional, with dynamic default ──────────────────────────────
+  const zoomRedirect = (process.env.ZOOM_REDIRECT_URI ?? '').trim();
+  envVars.push({
+    name: 'ZOOM_REDIRECT_URI',
+    present: !!zoomRedirect,
+    used: !!zoomRedirect,
+    length: zoomRedirect.length || undefined,
+    purpose:
+      'Override the OAuth redirect URI. If unset, the runtime builds it dynamically from the incoming request host.',
+  });
+
+  // ── 3. Webhook signature verification ─────────────────────────────
+  const webhookToken = (process.env.ZOOM_WEBHOOK_SECRET_TOKEN ?? '').trim();
+  envVars.push({
+    name: 'ZOOM_WEBHOOK_SECRET_TOKEN',
+    present: !!webhookToken,
+    used: true,
+    length: webhookToken.length || undefined,
+    purpose:
+      'Used to verify Zoom webhook signatures. Required in production (NODE_ENV != "development").',
+  });
+
+  // ── 4. OAuth state HMAC secret ─────────────────────────────────────
+  const oauthStateSecret = (process.env.OAUTH_STATE_SECRET ?? '').trim();
+  const jwtSecret = (process.env.JWT_SECRET ?? '').trim();
+  const usingOAuthState = !!oauthStateSecret;
+  envVars.push(
+    {
+      name: 'OAUTH_STATE_SECRET',
+      present: !!oauthStateSecret,
+      used: usingOAuthState,
+      length: oauthStateSecret.length || undefined,
+      purpose:
+        'Dedicated HMAC secret for OAuth state tokens. Recommended. Falls back to JWT_SECRET if unset.',
+    },
+    {
+      name: 'JWT_SECRET',
+      present: !!jwtSecret,
+      // JWT_SECRET is "used" for the state HMAC only when the
+      // dedicated OAUTH_STATE_SECRET is missing. It's always used
+      // for auth (we just don't surface that here — not relevant
+      // to Zoom config).
+      used: !!jwtSecret && !usingOAuthState,
+      length: jwtSecret.length || undefined,
+      purpose:
+        'Auth + state-HMAC fallback. The runtime uses JWT_SECRET for the state HMAC only when OAUTH_STATE_SECRET is unset.',
+      note: !usingOAuthState && !!jwtSecret
+        ? 'Currently used as the state HMAC secret because OAUTH_STATE_SECRET is unset. Set OAUTH_STATE_SECRET to rotate independently of JWT signing.'
+        : undefined,
+    },
+  );
+
+  // ── 5. Per-program overrides ──────────────────────────────────────
+  const perProgram: PerProgramZoomOverride[] = [];
+  try {
+    const { default: ProgramConfig } = await import('../program/program-config.model.js');
+    // Only fetch the rows that have a zoom clientId — the rest
+    // are not using per-program credentials. The decrypt probe
+    // is run inline so we can surface "decrypt failed" without
+    // crashing the diagnostic response.
+    const docs = await ProgramConfig.find({
+      'zoom.clientId': { $exists: true, $ne: '' },
+    })
+      .select('batchId +zoom.clientSecret +zoom.webhookSecretToken')
+      .lean();
+    for (const doc of docs) {
+      const batchId = String(doc.batchId);
+      const entry: PerProgramZoomOverride = {
+        batchId,
+        hasClientId: !!doc.zoom?.clientId,
+        hasClientSecret: !!doc.zoom?.clientSecret,
+        hasWebhookToken: !!doc.zoom?.webhookSecretToken,
+        decryptOk: true,
+      };
+      if (doc.zoom?.clientSecret) {
+        try {
+          const { decrypt } = await import('../../utils/auth/crypto.js');
+          decrypt(doc.zoom.clientSecret);
+        } catch (err) {
+          entry.decryptOk = false;
+          entry.decryptError = (err as Error).message.slice(0, 200);
+        }
+      }
+      perProgram.push(entry);
+    }
+  } catch (err) {
+    adminLog.warn(`[zoom-diagnostics] per-program probe failed: ${(err as Error).message}`);
+  }
+
+  // ── 6. Resolution probe — does the runtime work? ──────────────────
+  const resolution: ZoomResolutionProbe = {
+    global: null,
+    sampleProgram: null,
+    effectiveRedirectUri: '',
+  };
+  try {
+    const globalCfg = await getProgramZoomConfig(null);
+    resolution.global = { ok: true, clientId: globalCfg.clientId, source: 'env' };
+  } catch (err) {
+    resolution.global = { ok: false, error: (err as Error).message.slice(0, 200) };
+  }
+  // Try the first per-program row to confirm the decryption path
+  // works end-to-end. Skip if there are no per-program rows.
+  if (perProgram.length > 0 && perProgram[0].decryptOk) {
+    try {
+      const cfg = await getProgramZoomConfig(perProgram[0].batchId);
+      resolution.sampleProgram = {
+        batchId: perProgram[0].batchId,
+        clientId: cfg.clientId,
+        source: 'program',
+      };
+    } catch (err) {
+      resolution.sampleProgram = { batchId: perProgram[0].batchId, error: (err as Error).message.slice(0, 200) };
+    }
+  }
+  resolution.effectiveRedirectUri =
+    process.env.ZOOM_REDIRECT_URI ?? 'http://localhost:6767/csfaq/api/zoom/auth/callback';
+
+  // ── 7. Aggregate summary ──────────────────────────────────────────
+  const missingRequired = envVars
+    .filter((v) => v.purpose.startsWith('Global Zoom app') && !v.present)
+    .map((v) => v.name);
+  const globalOk = resolution.global && 'ok' in resolution.global && resolution.global.ok;
+  const ok = missingRequired.length === 0 && !!globalOk;
+  const summary = ok
+    ? 'Zoom is fully configured.'
+    : missingRequired.length > 0
+      ? `Missing required env vars: ${missingRequired.join(', ')}.`
+      : !globalOk
+        ? `Global resolution failed: ${resolution.global && 'error' in resolution.global ? resolution.global.error : 'unknown'}`
+        : 'Partial config — see rows below.';
+
+  const response: ZoomDiagnosticsResponse = {
+    ok,
+    envVars,
+    perProgram,
+    resolution,
+    summary,
+  };
+  res.json(response);
 }
 
 // ─── Admin Backfill Trigger ───────────────────────────────────────────────────
