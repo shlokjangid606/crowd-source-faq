@@ -48,10 +48,15 @@ export async function connectZoom(req: Request, res: Response): Promise<void> {
   const rawBatch = req.query.batchId;
   const batchId = typeof rawBatch === 'string' && rawBatch.length > 0 ? rawBatch : null;
   try {
-    const authUrl = await buildZoomAuthUrl(userId, {
+    const built = await buildZoomAuthUrl(userId, {
       headers: req.headers as Record<string, string | string[] | undefined>,
       protocol: req.protocol,
     });
+    // PKCE — the codeVerifier is embedded in the signed state (returned
+    // here for parity with the older single-return-value callers; the
+    // auth URL alone is what the frontend needs to redirect).
+    const authUrl = built.url;
+    void built.codeVerifier;
     adminLog.info(`[Zoom OAuth] User ${userId} initiated Zoom connect for batch ${batchId ?? 'global'}`);
     res.json({ authUrl, batchId });
   } catch (err) {
@@ -88,12 +93,17 @@ export async function callbackZoom(req: Request, res: Response): Promise<void> {
   // forgery vulnerability (issue N1): previously the state was just
   // base64(userId) which any attacker could forge. Now we verify the HMAC
   // signature + expiry + userId shape before trusting the userId in the state.
-  const userId = verifyOAuthState(state);
-  if (!userId) {
+  // PKCE — the state also carries the code_verifier that the connect
+  // step generated; we recover it here and forward it to the token
+  // exchange so Zoom can verify it matches the challenge sent in the
+  // authorize URL.
+  const statePayload = verifyOAuthState(state);
+  if (!statePayload) {
     adminLog.warn(`[Zoom OAuth] Invalid or expired state from callback (state=${state.slice(0, 20)}...)`);
     res.redirect(`${process.env.CLIENT_URL ?? 'http://localhost:5173'}/account?zoom_error=${encodeURIComponent('Invalid or expired authentication state. Please try again.')}`);
     return;
   }
+  const { userId, codeVerifier } = statePayload;
 
   try {
     // Verify user role
@@ -113,7 +123,7 @@ export async function callbackZoom(req: Request, res: Response): Promise<void> {
       // the state didn't carry one.
       const rawBatch = req.query.batchId;
       const batchId = typeof rawBatch === 'string' && rawBatch.length > 0 ? rawBatch : null;
-      tokens = await exchangeCodeForTokens(code, batchId);
+      tokens = await exchangeCodeForTokens(code, batchId, codeVerifier);
     } catch (err) {
       if (err instanceof CircuitOpenError) {
         adminLog.warn(`[Zoom OAuth] Circuit breaker open for token exchange`);
