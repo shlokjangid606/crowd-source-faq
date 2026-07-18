@@ -14,8 +14,8 @@ export default function OfflineModeManager(): null {
   const { enabled, loading } = useFeatureFlag('offlineMode');
 
   useEffect(() => {
-    // Don't act on the flag's default (`false`) fallback while the real
-    // value is still loading — that would briefly unregister an already-
+    // Avoid acting on the default (`false`) feature flag value while the
+    // actual flag value is still loading This prevents briefly unregestering an
     // active service worker from a previous session on every page load.
     if (loading) return;
 
