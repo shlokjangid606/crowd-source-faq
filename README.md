@@ -18,7 +18,7 @@ Every question a user has has been asked before — and most will be asked again
 - **Zero-touch quality control** — Approved FAQs are re-evaluated every 6 hours; drift, contradictions, and staleness are detected and flagged automatically.
 - **Zero-touch user lifecycle** — Deletion is anonymisation, not destruction. Reputation, attribution, and audit history persist.
 
-The platform is the operator. People handle exceptions, not the steady state.
+The platform acts as the primary operator, while people handle exceptions instead of routine operations.
 
 ---
 
