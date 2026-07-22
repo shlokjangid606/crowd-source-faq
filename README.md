@@ -4,15 +4,11 @@ Full-stack FAQ portal with semantic vector search, AI-powered community moderati
 
 GitHub: https://github.com/vicharanashala/crowd-source-faq
 Full reference: [`docs/`](docs/README.md) · [Contributing](./CONTRIBUTING.md) · [Code of Conduct](./CODE_OF_CONDUCT.md) · [License](./LICENSE)
-
 ---
-
 ## Vision
 
 **Automate the FAQ lifecycle end-to-end. Zero people in the loop. Reduce the operational FAQ culture.**
-
 Every question a user has has been asked before — and most will be asked again. The right answer should be there before the user finishes typing. The platform achieves this through four zero-touch pillars:
-
 - **Zero-touch ingestion** — Zoom meetings, webhooks, and manual uploads feed the knowledge base without human scheduling, categorising, or approval.
 - **Zero-touch answering** — A 24-hour scheduler matches unanswered posts against the knowledge base; high-confidence matches auto-post, low-confidence escalate to humans.
 - **Zero-touch quality control** — Approved FAQs are re-evaluated every 6 hours; drift, contradictions, and staleness are detected and flagged automatically.
