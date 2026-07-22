@@ -93,13 +93,6 @@ function CategoryDropdown({
   );
 }
 
-interface DuplicateMatch {
-  source: string;
-  score: number;
-  // Other fields are server-defined; we only consume these two.
-  [k: string]: unknown;
-}
-
 interface CreatePostDialogProps {
   onClose: () => void;
   onCreated: (post: Post, dupResult?: { isDuplicate: boolean; dupCount: number; faqMatches: number }) => void;
